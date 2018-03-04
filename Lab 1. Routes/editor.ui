@@ -2,10 +2,18 @@
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1000</width>
+    <height>550</height>
+   </rect>
+  </property>
   <property name="minimumSize">
    <size>
-    <width>1250</width>
-    <height>830</height>
+    <width>1000</width>
+    <height>550</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -17,18 +25,18 @@
      <rect>
       <x>30</x>
       <y>40</y>
-      <width>491</width>
-      <height>40</height>
+      <width>261</width>
+      <height>31</height>
      </rect>
     </property>
    </widget>
    <widget class="QLineEdit" name="where">
     <property name="geometry">
      <rect>
-      <x>550</x>
+      <x>300</x>
       <y>40</y>
-      <width>521</width>
-      <height>40</height>
+      <width>241</width>
+      <height>31</height>
      </rect>
     </property>
    </widget>
@@ -54,7 +62,7 @@
    <widget class="QLabel" name="label_2">
     <property name="geometry">
      <rect>
-      <x>550</x>
+      <x>300</x>
       <y>10</y>
       <width>131</width>
       <height>30</height>
@@ -73,10 +81,10 @@
    <widget class="QTableWidget" name="points">
     <property name="geometry">
      <rect>
-      <x>470</x>
-      <y>350</y>
-      <width>431</width>
-      <height>461</height>
+      <x>350</x>
+      <y>220</y>
+      <width>321</width>
+      <height>271</height>
      </rect>
     </property>
     <property name="font">
@@ -122,8 +130,8 @@
    <widget class="QPushButton" name="redo">
     <property name="geometry">
      <rect>
-      <x>910</x>
-      <y>770</y>
+      <x>770</x>
+      <y>330</y>
       <width>134</width>
       <height>38</height>
      </rect>
@@ -141,8 +149,8 @@
    <widget class="QPushButton" name="undo">
     <property name="geometry">
      <rect>
-      <x>1060</x>
-      <y>770</y>
+      <x>770</x>
+      <y>280</y>
       <width>134</width>
       <height>38</height>
      </rect>
@@ -162,18 +170,18 @@
      <rect>
       <x>30</x>
       <y>100</y>
-      <width>1161</width>
-      <height>211</height>
+      <width>641</width>
+      <height>111</height>
      </rect>
     </property>
    </widget>
    <widget class="QPushButton" name="go">
     <property name="geometry">
      <rect>
-      <x>1080</x>
+      <x>550</x>
       <y>40</y>
       <width>121</width>
-      <height>38</height>
+      <height>41</height>
      </rect>
     </property>
     <property name="font">
@@ -189,10 +197,10 @@
    <widget class="QPushButton" name="import_gpx">
     <property name="geometry">
      <rect>
-      <x>910</x>
-      <y>660</y>
-      <width>281</width>
-      <height>38</height>
+      <x>700</x>
+      <y>220</y>
+      <width>271</width>
+      <height>41</height>
      </rect>
     </property>
     <property name="font">
@@ -208,9 +216,9 @@
    <widget class="QPushButton" name="import_poly">
     <property name="geometry">
      <rect>
-      <x>910</x>
-      <y>600</y>
-      <width>281</width>
+      <x>700</x>
+      <y>160</y>
+      <width>271</width>
       <height>41</height>
      </rect>
     </property>
@@ -227,10 +235,10 @@
    <widget class="QPushButton" name="save">
     <property name="geometry">
      <rect>
-      <x>910</x>
-      <y>380</y>
+      <x>700</x>
+      <y>40</y>
       <width>271</width>
-      <height>38</height>
+      <height>41</height>
      </rect>
     </property>
     <property name="font">
@@ -246,9 +254,9 @@
    <widget class="QPushButton" name="update">
     <property name="geometry">
      <rect>
-      <x>910</x>
-      <y>490</y>
-      <width>281</width>
+      <x>700</x>
+      <y>100</y>
+      <width>271</width>
       <height>41</height>
      </rect>
     </property>
@@ -262,13 +270,13 @@
      <string>Update</string>
     </property>
    </widget>
-   <widget class="QTableWidget" name="points_2">
+   <widget class="QTableWidget" name="routes">
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>350</y>
-      <width>421</width>
-      <height>461</height>
+      <y>220</y>
+      <width>311</width>
+      <height>271</height>
      </rect>
     </property>
     <property name="font">
