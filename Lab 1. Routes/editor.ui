@@ -29,6 +29,13 @@
       <height>31</height>
      </rect>
     </property>
+    <property name="font">
+     <font>
+      <family>Courier New</family>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
    </widget>
    <widget class="QLineEdit" name="where">
     <property name="geometry">
@@ -38,6 +45,11 @@
       <width>241</width>
       <height>31</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Courier New</family>
+     </font>
     </property>
    </widget>
    <widget class="QLabel" name="label">
@@ -81,9 +93,9 @@
    <widget class="QTableWidget" name="points">
     <property name="geometry">
      <rect>
-      <x>350</x>
+      <x>370</x>
       <y>220</y>
-      <width>321</width>
+      <width>301</width>
       <height>271</height>
      </rect>
     </property>
@@ -93,17 +105,6 @@
       <pointsize>16</pointsize>
      </font>
     </property>
-    <column>
-     <property name="text">
-      <string>#</string>
-     </property>
-     <property name="font">
-      <font>
-       <family>Courier New</family>
-       <pointsize>16</pointsize>
-      </font>
-     </property>
-    </column>
     <column>
      <property name="text">
       <string>Longtude</string>
@@ -165,21 +166,11 @@
      <string>Undo</string>
     </property>
    </widget>
-   <widget class="QTextEdit" name="text">
-    <property name="geometry">
-     <rect>
-      <x>30</x>
-      <y>100</y>
-      <width>641</width>
-      <height>111</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QPushButton" name="go">
     <property name="geometry">
      <rect>
       <x>550</x>
-      <y>40</y>
+      <y>37</y>
       <width>121</width>
       <height>41</height>
      </rect>
@@ -251,7 +242,7 @@
      <string>Save</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="update">
+   <widget class="QPushButton" name="delete">
     <property name="geometry">
      <rect>
       <x>700</x>
@@ -267,16 +258,16 @@
      </font>
     </property>
     <property name="text">
-     <string>Update</string>
+     <string>Delete</string>
     </property>
    </widget>
    <widget class="QTableWidget" name="routes">
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>220</y>
-      <width>311</width>
-      <height>271</height>
+      <y>100</y>
+      <width>331</width>
+      <height>391</height>
      </rect>
     </property>
     <property name="font">
@@ -319,8 +310,52 @@
      </property>
     </column>
    </widget>
+   <widget class="QTableWidget" name="info">
+    <property name="geometry">
+     <rect>
+      <x>370</x>
+      <y>100</y>
+      <width>301</width>
+      <height>121</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Courier New</family>
+      <pointsize>16</pointsize>
+     </font>
+    </property>
+    <column>
+     <property name="text">
+      <string>Property</string>
+     </property>
+     <property name="font">
+      <font>
+       <family>Courier New</family>
+       <pointsize>16</pointsize>
+      </font>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>Value</string>
+     </property>
+     <property name="font">
+      <font>
+       <family>Courier New</family>
+       <pointsize>16</pointsize>
+      </font>
+     </property>
+    </column>
+   </widget>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="font">
+    <font>
+     <family>Courier New</family>
+    </font>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets, uic
 from commands import Redo, Undo, Save, FindFromGoogle, ImportGPX, ImportPolyline
-# https://gist.github.com/signed0/2031157
+from routes import Route, RoutesCreator
 
 
 class Window(QtWidgets.QMainWindow):   # Facade
@@ -13,15 +13,22 @@ class Window(QtWidgets.QMainWindow):   # Facade
         self._import_gpx = ImportGPX()
         self._import_poly = ImportPolyline()
         self._save = Save()
-        # self._update =
 
+        self.delete.setEnabled(False)
+
+        self.info.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.redo.clicked.connect(lambda: self._redo.execute(win=self))
         self.undo.clicked.connect(lambda: self._undo.execute(win=self))
         self.go.clicked.connect(lambda: self._go.execute(win=self))
         self.import_gpx.clicked.connect(lambda: self._import_gpx.execute(win=self))
         self.import_poly.clicked.connect(lambda: self._import_poly.execute(win=self))
         self.save.clicked.connect(lambda: self._save.execute(win=self))
-        # self.update.clicked.connect(self._redo.execute())
+        self.delete.clicked.connect(lambda: RoutesCreator.delete_route(self))
+
+        self.routes.cellClicked.connect(lambda: Route.fill_points_table(self))
+        self.routes.cellClicked.connect(lambda: Route.fill_property_table(self))
+        self.routes.cellChanged.connect(lambda: Route.edit_route(self))
+        self.points.cellChanged.connect(lambda: Route.edit_points(self))
 
 
 if __name__ == "__main__":
