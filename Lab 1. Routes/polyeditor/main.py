@@ -33,9 +33,13 @@ class Window(QtWidgets.QMainWindow):   # Facade
         self.points.cellChanged.connect(lambda: self._edit.execute(self))
 
 
-if __name__ == "__main__":
+def run_editor():
     import sys
     app = QtWidgets.QApplication(sys.argv)
     w = Window()
     w.show()
     sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    run_editor()
