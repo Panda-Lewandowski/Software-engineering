@@ -16,6 +16,7 @@ class Window(QtWidgets.QMainWindow):   # Facade
         self._edit = Edit()
 
         self.stack = OperationStack()
+        self.stack.win = self
 
         self.delete.setEnabled(False)
         self.redo.setEnabled(False)
@@ -31,6 +32,7 @@ class Window(QtWidgets.QMainWindow):   # Facade
         self.routes.cellClicked.connect(lambda: self._fill.execute(self))
         self.routes.cellChanged.connect(lambda: self._edit.execute(self))
         self.points.cellChanged.connect(lambda: self._edit.execute(self))
+        self.points.cellClicked.connect(lambda: self._edit.execute(self))
 
 
 def run_editor():

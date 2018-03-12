@@ -9,6 +9,7 @@ import logging
 import datetime
 
 
+
 routes_pool = {}
 
 
@@ -76,6 +77,22 @@ class Route:
         win.routes.setItem(r, 0, title)
         win.routes.setItem(r, 1, length)
         win.routes.setItem(r, 2, time)
+        win.stack.push({
+            "Edit": {
+                "title": self.title
+            }
+        })
+        win.stack.push({
+            "Edit": {
+                "length": [self.title, self.length]
+            }
+        })
+        win.stack.push({
+            "Edit": {
+                "date": [self.title, self.date]
+            }
+        })
+
         length.setFlags(Qt.ItemIsSelectable)
         win.routes.resizeColumnsToContents()
 
