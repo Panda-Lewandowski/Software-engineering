@@ -18,7 +18,8 @@ class Window(QtWidgets.QMainWindow):   # Facade
         self.stack = OperationStack()
         self.stack.win = self
 
-        self.delete.setEnabled(False)
+        self.delete_route.setEnabled(False)
+        self.delete_point.setEnabled(False)
         self.redo.setEnabled(False)
         self.undo.setEnabled(False)
 
@@ -27,7 +28,8 @@ class Window(QtWidgets.QMainWindow):   # Facade
         self.undo.clicked.connect(lambda: self._undo.execute(win=self))
         self.import_gpx.clicked.connect(lambda: self._import_gpx.execute(win=self))
         self.import_poly.clicked.connect(lambda: self._import_poly.execute(win=self))
-        self.delete.clicked.connect(lambda: self._remove.execute(self))
+        self.delete_route.clicked.connect(lambda: self._remove.execute(self, "route"))
+        self.delete_point.clicked.connect(lambda: self._remove.execute(self, "point"))
 
         self.routes.cellClicked.connect(lambda: self._fill.execute(self))
         self.routes.cellChanged.connect(lambda: self._edit.execute(self))

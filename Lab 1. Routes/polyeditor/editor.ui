@@ -221,12 +221,12 @@
      </property>
     </column>
    </widget>
-   <widget class="QPushButton" name="delete">
+   <widget class="QPushButton" name="delete_route">
     <property name="geometry">
      <rect>
-      <x>770</x>
+      <x>754</x>
       <y>250</y>
-      <width>134</width>
+      <width>164</width>
       <height>38</height>
      </rect>
     </property>
@@ -237,7 +237,26 @@
      </font>
     </property>
     <property name="text">
-     <string>Delete</string>
+     <string>Delete route </string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="delete_point">
+    <property name="geometry">
+     <rect>
+      <x>754</x>
+      <y>300</y>
+      <width>164</width>
+      <height>38</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Courier New</family>
+      <pointsize>16</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Delete point</string>
     </property>
    </widget>
   </widget>

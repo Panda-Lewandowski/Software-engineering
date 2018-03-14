@@ -15,7 +15,7 @@ HISTORY = []
 class Command:
 
     @abstractmethod
-    def execute(self, win) -> None:
+    def execute(self, *args) -> None:
         pass
 
     @abstractmethod
@@ -39,7 +39,6 @@ class OperationStack:
         self.pointer += 1
 
         HISTORY.append(elem)
-        print(HISTORY)
 
     def pop(self):
         if len(HISTORY) != 0:
@@ -99,6 +98,8 @@ class Filler:
             win.points.setItem(r, 1, lon)
 
         win.points.resizeColumnsToContents()
+
+        win.delete_point.setEnabled(True)
 
         for pr in route.__dict__:
             if pr != 'points':
@@ -170,8 +171,6 @@ class Editor:
 
                         route.points[row][col] = float(p.text())
 
-
-
                 length = R * acos(sin(route.points[0][0]) * sin(route.points[-1][0]) +
                                   cos(route.points[0][0]) * cos(route.points[-1][0]) *
                                   cos(route.points[0][1] - route.points[-1][1]))
@@ -217,7 +216,20 @@ class Remover:
             win.points.removeRow(0)
 
         if len(routes_pool) == 0:
-            win.delete.setEnabled(False)
+            win.delete_route.setEnabled(False)
+
+
+    def delete_selected_point(self, win):
+        items = win.routes.selectedItems()
+        route = routes_pool.pop(win.routes.item(items[0].row(), 0).text())
+
+        items = win.points.selectedItems()
+        for i in items:
+            route.points.pop(i.row())
+            win.points.removeRow(i.row())
+
+        if len(route.points) == 0:
+            win.delete_points.setEnabled(False)
 
 
 @singleton
@@ -423,14 +435,16 @@ class Edit(Command):
                         })
 
 
-
 class Remove(Command):
     def __init__(self, executor=Remover()) -> None:
         self.importer = executor
 
-    def execute(self, win):
+    def execute(self, win, target):
         logging.debug("Delete command")
-        self.importer.delete_selected_route(win=win)
+        if target == "route":
+            self.importer.delete_selected_route(win=win)
+        elif target == "point":
+            self.importer.delete_selected_point(win)
 
     def cancel(self, win, name) -> None:
         key = list(name.keys())[0]

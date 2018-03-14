@@ -100,7 +100,7 @@ class Route:
 class RoutesCreator:  # фабричный метод
     @staticmethod
     def create_route(source, path, win):
-        win.delete.setEnabled(True)
+        win.delete_route.setEnabled(True)
         return Route(source, path, win)
 
     @staticmethod
