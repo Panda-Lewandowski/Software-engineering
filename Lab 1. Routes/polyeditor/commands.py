@@ -45,7 +45,8 @@ class OperationStack:
             self.win.redo.setEnabled(True)
 
         self.pointer -= 1
-        return HISTORY[-1]
+        print(self.pointer, len(HISTORY))
+        return HISTORY[self.pointer]
 
 
 class Redo(Command):
