@@ -37,21 +37,126 @@ class OperationStack:
             self.win.redo.setEnabled(True)
 
         self.pointer += 1
-
-        HISTORY.append(elem)
+        # HISTORY.append(elem)
+        HISTORY.insert(self.pointer, elem)
 
     def pop(self):
         if len(HISTORY) != 0:
             self.win.redo.setEnabled(True)
 
         self.pointer -= 1
-        print(self.pointer, len(HISTORY))
-        return HISTORY[self.pointer]
+        return HISTORY[self.pointer + 1]
 
 
 class Redo(Command):
     def execute(self, win):
         logging.debug("Redo Сommand")
+        if len(HISTORY) <= win.stack.pointer + 1:
+            return
+        win.stack.pointer += 1
+        act = HISTORY[win.stack.pointer]
+        key = list(act.keys())[0]
+        sub = act[key]
+
+        if key == "ImportPolyline":
+            print('lolool')
+
+        elif key == "ImportGPX":
+            pass
+
+        elif key == "Edit":
+            if list(sub.keys())[0] == "title":
+                for i in range(win.stack.pointer-1, -1, -1):
+                    key = list(HISTORY[i].keys())[0]
+                    if key == "Edit":
+                        conf = HISTORY[i]['Edit']
+                        key_c = list(conf.keys())[0]
+                        if key_c == 'title':
+                            print(conf['title'])
+                            route = routes_pool[conf['title']]
+                            item_to_change = win.info.findItems("title", Qt.MatchFixedString)
+                            temp = win.info.item(item_to_change[0].row(), 1)
+                            temp.setText("{0}".format(sub['title']))
+                            item_to_change = win.routes.findItems(route.title, Qt.MatchFixedString)
+                            temp = win.routes.item(item_to_change[0].row(), 0)
+                            temp.setText("{0}".format(sub['title']))
+                            route.title = sub['title']
+                            break
+
+            elif list(sub.keys())[0] == "date":
+                for i in range(win.stack.pointer-1, -1, -1):
+                    key = list(HISTORY[i].keys())[0]
+                    if key == "Edit":
+                        conf = HISTORY[i]['Edit']
+                        key_c = list(conf.keys())[0]
+                        if key_c == 'date':
+                            route = routes_pool[conf['date'][0]]
+
+                            item_to_change = win.routes.findItems(route.date, Qt.MatchFixedString)
+                            temp = win.routes.item(item_to_change[0].row(), 2)
+                            temp.setText("{0}".format(sub['date'][1]))
+                            item_to_change = win.info.findItems("date", Qt.MatchFixedString)
+                            temp = win.info.item(item_to_change[0].row(), 1)
+                            temp.setText("{0}".format(sub['date'][1]))
+                            route.date = sub['date'][1]
+                            break
+            elif list(sub.keys())[0] == "point":
+                route = routes_pool[sub['point'][0]]
+                route.points[sub['point'][1]][sub['point'][2]] = sub['point'][3]
+                win._fill.execute(win)
+            elif list(sub.keys())[0] == "length":
+                for i in range(win.stack.pointer-1, -1, -1):
+                    key = list(HISTORY[i].keys())[0]
+                    if key == "Edit":
+                        conf = HISTORY[i]['Edit']
+                        key_c = list(conf.keys())[0]
+                        if key_c == 'length':
+                            route = routes_pool[conf['length'][0]]
+
+                            item_to_change = win.routes.findItems("{0:.3f}".format(route.length), Qt.MatchContains)
+                            temp = win.routes.item(item_to_change[0].row(), 1)
+                            temp.setText("{0:.3f}".format(sub['length'][1]))
+
+                            item_to_change = win.info.findItems("length", Qt.MatchFixedString)
+                            temp = win.info.item(item_to_change[0].row(), 1)
+                            temp.setText("{0}".format(sub['length'][1]))
+                            route.length = sub['length'][1]
+
+                            act = HISTORY[-2]['Edit']
+                            try:
+                                route = routes_pool[act['point'][0]]
+                                route.points[act['point'][1]][act['point'][2]] = act['point'][3]
+                                win._fill.execute(win)
+                            except KeyError:
+                                pass
+
+        elif key == "Remove":
+            if list(sub.keys())[0] == "Point":
+                route = routes_pool[sub['Point'][0]]
+                route.points.pop(sub['Point'][1])
+                win.points.removeRow(sub['Point'][1])
+            elif list(sub.keys())[0] == "GPX":
+                route = sub['GPX']
+                items = win.routes.findItems(route.title, Qt.MatchFixedString)
+                win.routes.removeRow(items[0].row())
+                while win.info.rowCount() != 0:
+                    win.info.removeRow(0)
+                while win.points.rowCount() != 0:
+                    win.points.removeRow(0)
+
+                if len(routes_pool) == 0:
+                    win.delete_route.setEnabled(False)
+            elif list(sub.keys())[0] == "Polyline":
+                route = sub['Polyline']
+                items = win.routes.findItems(route.title, Qt.MatchFixedString)
+                win.routes.removeRow(items[0].row())
+                while win.info.rowCount() != 0:
+                    win.info.removeRow(0)
+                while win.points.rowCount() != 0:
+                    win.points.removeRow(0)
+
+                if len(routes_pool) == 0:
+                    win.delete_route.setEnabled(False)
 
     def cancel(self, win) -> None:
         pass
@@ -112,8 +217,6 @@ class Filler:
                 win.info.setItem(r, 1, value)
 
         win.info.resizeColumnsToContents()
-
-
 
 
 @singleton
@@ -197,6 +300,11 @@ class Remover:
     def delete_selected_route(self, win):
         items = win.routes.selectedItems()
 
+        if len(items) == 0:
+            QtWidgets.QMessageBox.warning(None, "Warning", "Routes was not selected!",
+                                          buttons=QtWidgets.QMessageBox.Ok)
+            return
+
         route = routes_pool.pop(win.routes.item(items[0].row(), 0).text())
         if route.type == gpxpy.gpx.GPX:
             win.stack.push({
@@ -218,19 +326,24 @@ class Remover:
 
         if len(routes_pool) == 0:
             win.delete_route.setEnabled(False)
-
+            win.delete_point.setEnabled(False)
 
     def delete_selected_point(self, win):
         items = win.routes.selectedItems()
-        route = routes_pool.pop(win.routes.item(items[0].row(), 0).text())
+        route = routes_pool[win.routes.item(items[0].row(), 0).text()]
 
         items = win.points.selectedItems()
         for i in items:
+            win.stack.push({
+                "Remove": {
+                    "Point": [route.title, i.row(), route.points[i.row()]]
+                }
+            })
             route.points.pop(i.row())
             win.points.removeRow(i.row())
 
         if len(route.points) == 0:
-            win.delete_points.setEnabled(False)
+            win.delete_point.setEnabled(False)
 
 
 @singleton
@@ -270,12 +383,12 @@ class Importer:
                 name = "MyRoute"
                 logging.warning("The title of route {0} was not entered".format(polyline))
 
+            RoutesCreator.create_route(polyline, name, win)
             win.stack.push({
                 "ImportPolyline": {
                     "import": name
                 }
             })
-            RoutesCreator.create_route(polyline, name, win)
             logging.debug("The polyline {0} with title {1} was loaded.".format(polyline, name))
             win.statusbar.showMessage("The polyline {0} with title {1} was loaded.".format(polyline, name))
 
@@ -371,12 +484,6 @@ class Edit(Command):
                         temp = win.info.item(item_to_change[0].row(), 1)
                         temp.setText("{0}".format(route.title))
 
-                        win.stack.push({
-                            "Edit": {
-                                "title": route.title
-                            }
-                        })
-
                     if key_c == "date" == sub:
                         value = conf[sub][1]
                         route = routes_pool[conf[sub][0]]
@@ -390,11 +497,6 @@ class Edit(Command):
                         item_to_change = win.info.findItems("date", Qt.MatchFixedString)
                         temp = win.info.item(item_to_change[0].row(), 1)
                         temp.setText("{0}".format(route.date))
-                        win.stack.push({
-                            "Edit": {
-                                "date": [route.title, route.date]
-                            }
-                        })
 
         elif sub == "point":
             route = routes_pool[act['point'][0]]
@@ -429,12 +531,6 @@ class Edit(Command):
                         except KeyError:
                             pass
 
-                        win.stack.push({
-                            "Edit": {
-                                "length": [route.title, route.length]
-                            }
-                        })
-
 
 class Remove(Command):
     def __init__(self, executor=Remover()) -> None:
@@ -449,9 +545,15 @@ class Remove(Command):
 
     def cancel(self, win, name) -> None:
         key = list(name.keys())[0]
-        route = name[key]
-        routes_pool.update({route.title: route})
-        route.fill_route_table(win)
+        if key == 'Polyline' or key == 'GPX':
+            route = name[key]
+            routes_pool.update({route.title: route})
+            route.fill_route_table(win)
+        if key == 'Point':
+            sub = name['Point']
+            route = routes_pool[sub[0]]
+            route.points.insert(sub[1], sub[2])
+            win._fill.execute(win)
         logging.debug("Remove Сommand Cancel")
 
 
