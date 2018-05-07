@@ -46,8 +46,6 @@ def run_editor():
 
 
 if __name__ == "__main__":
-    try:
-        run_editor()
-    except Exception:
-        QtWidgets.QMessageBox.critical(None, "Suddenly...", "An error occurred. \n Please restart the program.",
+    run_editor()
+    QtWidgets.QMessageBox.critical(None, "Suddenly...", "An error occurred. \n Please restart the program.",
                                        defaultButton=QtWidgets.QMessageBox.Ok)

@@ -9,7 +9,7 @@ import gpxpy.gpx
 from math import sin, cos, acos
 from routes import routes_pool, R, RoutesCreator
 
-HISTORY = []
+HISTORY = [] #Todo
 
 
 class Command:
@@ -410,7 +410,7 @@ class ImportGPX(Command):
         logging.debug("ImportGPX Сommand Cancel")
         item = win.routes.findItems(name, Qt.MatchFixedString)[0]
         item.setSelected(True)
-        win.delete.click()
+        win.delete_route.click()
 
 
 class ImportPolyline(Command):
