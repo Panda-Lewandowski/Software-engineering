@@ -4,7 +4,7 @@ from django.db import models
 class Route(models.Model):
     id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=50, default=id)
-    date = models.DateField(auto_now_add=True) 
+    date = models.DateField(auto_now=True) 
     length = models.PositiveIntegerField(default=0)
 
     points = None

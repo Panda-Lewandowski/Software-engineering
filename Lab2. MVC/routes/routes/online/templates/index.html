@@ -18,14 +18,19 @@
     webix.ui({
     rows: [
         { view:"toolbar", elements:[
-            { view:"button", value:"Delete", width:100 },
+            { view:"button", value:"Delete", width:100, click:function(){
+				$$("table").remove($$("table").getSelectedId()); }},
           	{ view:"button", value:"Update", width:100 },
           	{ view:"button", value:"Undo", width:100 },
          	{ view:"button", value:"Redo", width:100 }
         ]},
         { cols:[
             { width:900, 
-              view:"datatable", 
+              id: "table",
+              view:"datatable",
+              select:"row",
+              multiselect:false,
+		      editable:true, 
               on:{
                     onBeforeLoad:function(){
                         this.showOverlay("Loading...");
@@ -34,27 +39,39 @@
                         this.hideOverlay();
                         if (!this.count())
                             this.showOverlay("Sorry, there is no data");
+                    }, 
+                    onFocus:function(current_view, prev_view){
+                        //alert(current_view, prev_view);
+                        var item = this.getSelectedItem();
+                        alert(item);
                     }
             },
 				columns:[
     				{id:"id", header:"", width:50, sort:"int"},
-                  	{id:"name", header:["Name", {content:"textFilter"}], width:450, adjust:"data"},
-                  	{id:"len", header:"Lenght", width: 150},
-                  	{id:"date", header:["Date", {content:"selectFilter"}], width:250, adjust:"data"}
+                  	{id:"name", header:["Name", {content:"textFilter"}], width:450, adjust:"data", fillspace:true},
+                  	{id:"len", header:"Lenght", width: 150, fillspace:true},
+                  	{id:"date", header:"Date", width:250, adjust:"data", fillspace:true}
                   ],
              autoheight:true,
              scrollX:false,
-            //  data: {% json_data 
-	
+            data: [{% if json_data  %} 
+                    JSON.parse('{{ json_data|safe }}')
+                    {% endif %}
+                ]
+            //  data: [
+            //  {id:1, name:"bla", len:10, date:'10.07.98'}
+            //  ]
             },
             {  
             view:"form", 
             id:"input_form",
             elements:[
-                { rows:[ 
-                    { view:"text", label:"Name", value:"" },
-                    { view:"text", label:"Polyline", value:"" }
-                ]},
+                { 
+                    view:"form", 
+                    id:"gpx_form", 
+                    elements:[
+                    { view:"text", label:"Name", name:"name", value:"MyRoute1" },
+                    { view:"text", label:"Polyline", name:"poly", value:"_p~iF~ps|U_ulLnnqC_mqNvxq`@" }]} ,
                 { rows:[ 
                     { template:"or", type:"section"},
                     { 
@@ -69,12 +86,16 @@
                         },
                 ]},
                 { margin:5, cols:[
-                    { view:"button", value:"Add" , type:"form"},
-                    { view:"button", value:"Cancel"}
+                    { view:"button", value:"Add" , type:"form", click:function(){
+                            var values = $$("gpx_form").getValues();
+                            webix.ajax().post("addpoly/", { name: values.name, poly: values.poly}, function(text){
+                                $$("table").add(JSON.parse(text));
+                            webix.message("Your post was added."); //show server side response
+                        });
+                    }}
                 ]}
             ]
         }
-    
     ]}, 
       { cols:[
           {
@@ -120,6 +141,8 @@
       ]}
     ]
 });
+
+
 </script>
 </body>
 </html>

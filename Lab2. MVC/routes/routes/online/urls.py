@@ -4,5 +4,6 @@ from . import views
 
 
 urlpatterns = [
-    url(r'^$', views.index),
+    url(r"^addpoly/$", views.add_poly),
+    url(r'^$', views.index)
 ]
