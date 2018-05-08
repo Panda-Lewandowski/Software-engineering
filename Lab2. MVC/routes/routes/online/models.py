@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 
 
 class Route(models.Model):
@@ -7,8 +8,30 @@ class Route(models.Model):
     date = models.DateField(auto_now=True) 
     length = models.PositiveIntegerField(default=0)
 
-    points = None
-    height = None
+    points = JSONField(default=[
+                                {   
+                                    'id':1,
+                                    'lat':38.5, 
+                                    'lon':-120.2,
+                                    'ele':0
+                                },
+                                {   
+                                    'id':2,
+                                    'lat':40.7, 
+                                    'lon':-120.95,
+                                    'ele':0
+                                }, 
+                                {
+                                    'id':3,
+                                    'lat':43.252, 
+                                    'lon':-126.453,
+                                    'ele':0
+                                }
+    ])
+
+    
+
+
 
     class Meta:
         ordering = ["id"]

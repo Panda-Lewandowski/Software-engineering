@@ -3,9 +3,8 @@
 <head>
     <title>Routes</title>
     {% load static %}
-    <script type="text/javascript" src="{% static 'webix.js' %}"></script>
-    <script type="text/javascript" src="{% static 'skin.js' %}"></script>
-	<link rel="stylesheet" type="text/css" href="{% static 'webix.css' %} ">
+    <script type="text/javascript" src="//cdn.webix.com/edge/webix.js"></script>
+	<link rel="stylesheet" type="text/css" href="//cdn.webix.com/edge/webix.css">
 </head>
 <body>
 {% csrf_token %}
@@ -18,9 +17,46 @@
     webix.ui({
     rows: [
         { view:"toolbar", elements:[
-            { view:"button", value:"Delete", width:100, click:function(){
-				$$("table").remove($$("table").getSelectedId()); }},
-          	{ view:"button", value:"Update", width:100 },
+            { view:"button", value:"Delete route", width:100, click:function(){
+                    var item =  $$("table").getSelectedItem();
+                    if (item === undefined)
+                        alert("There are no selected routes.");
+                    else {
+                        webix.ajax().post("delroute/", { id: item.id}, function(text){
+                            webix.message("Route was deleted.")
+                            $$("lvl").clearAll();
+                            $$("points").clearAll();
+                            $$("table").remove($$("table").getSelectedId()); 
+                        });
+                    }
+                    
+                }
+            },
+            { view:"button", value:"Delete point", width:100, click:function(){
+                var item =  $$("points").getSelectedItem();
+                if (item === undefined)
+                        alert("There are no selected points.");
+                else {
+                        var item_table =  $$("table").getSelectedItem();
+                        webix.ajax().post("delpoint/", { id_route: item_table.id, id_point: item.id}, function(text){
+                            $$("points").remove($$("points").getSelectedId()); 
+                            webix.message("Points was deleted.");
+                            $$("lvl").clearAll();
+                            webix.ajax().post("getele/", { id: item_table.id}, function(text){
+                                var res = JSON.parse(text);
+                                var min_e = res.min;
+                                var max_e = res.max;
+                                var h = res.h;
+                                $$("lvl").define("data", res.eles);
+                                $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
+                                $$("lvl").refresh();
+                        });
+
+                        });
+
+                }
+            }
+            },
           	{ view:"button", value:"Undo", width:100 },
          	{ view:"button", value:"Redo", width:100 }
         ]},
@@ -30,7 +66,8 @@
               view:"datatable",
               select:"row",
               multiselect:false,
-		      editable:true, 
+              editable:true,
+              editaction:"dblclick",
               on:{
                     onBeforeLoad:function(){
                         this.showOverlay("Loading...");
@@ -41,26 +78,43 @@
                             this.showOverlay("Sorry, there is no data");
                     }, 
                     onFocus:function(current_view, prev_view){
-                        //alert(current_view, prev_view);
                         var item = this.getSelectedItem();
-                        alert(item);
+                        webix.ajax().post("getpoints/", { id: item.id}, function(text){
+                                var points = JSON.parse(text).points;
+                                //alert(JSON.stringify(points));
+                                $$("points").clearAll();
+                                for (i in points) {
+                                    $$("points").add(points[i]);
+                                }
+                        });
+
+                        webix.ajax().post("getele/", { id: item.id}, function(text){
+                                var res = JSON.parse(text);
+                                var min_e = res.min;
+                                var max_e = res.max;
+                                var h = res.h;
+                                $$("lvl").define("data", res.eles);
+                                $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
+                                $$("lvl").refresh();
+                        });
+                    },
+                    onAfterEditStop:function(state, editor, ignoreUpdate){
+                        if(state.value != state.old){
+                            webix.message("Cell value was changed")
+                        }
                     }
             },
 				columns:[
     				{id:"id", header:"", width:50, sort:"int"},
-                  	{id:"name", header:["Name", {content:"textFilter"}], width:450, adjust:"data", fillspace:true},
+                  	{id:"name", header:["Name", {content:"textFilter"}], width:450, editor:"text", fillspace:true},
                   	{id:"len", header:"Lenght", width: 150, fillspace:true},
-                  	{id:"date", header:"Date", width:250, adjust:"data", fillspace:true}
+                  	{id:"date", header:"Date", width:250, editor:"text", fillspace:true}
                   ],
-             autoheight:true,
-             scrollX:false,
-            data: [{% if json_data  %} 
+                autoheight:true,
+                data: [{% if json_data  %} 
                     JSON.parse('{{ json_data|safe }}')
                     {% endif %}
                 ]
-            //  data: [
-            //  {id:1, name:"bla", len:10, date:'10.07.98'}
-            //  ]
             },
             {  
             view:"form", 
@@ -85,11 +139,13 @@
                         autoheight:true, borderless:true	
                         },
                 ]},
-                { margin:5, cols:[
+                { margin:5, 
+                    cols:[
                     { view:"button", value:"Add" , type:"form", click:function(){
                             var values = $$("gpx_form").getValues();
                             webix.ajax().post("addpoly/", { name: values.name, poly: values.poly}, function(text){
                                 $$("table").add(JSON.parse(text));
+                                $$("table").hideOverlay();
                             webix.message("Your post was added."); //show server side response
                         });
                     }}
@@ -99,43 +155,37 @@
     ]}, 
       { cols:[
           {
-            view:"chart",
-            type:"line",
+            id:'lvl',
             width: 900,
-            value:"#sales#",
-            item:{
-                borderColor: "#ffffff",
-                color: "#2b7100"
-                
-            },
-            tooltip:{
-                template:"#sales#"
-            },
-            line:{
-                color:"#8ecf03",
-                width:2,
-                shadow:true
-            },
-            
+            view:"chart",
+            type:"splineArea",
+            value:"#ele#",
+            color:"#36abee",
+            alpha:0.6,
             xAxis:{
-                template:"'#year#"
+                template:"#x#"
             },
             yAxis:{
                 start:0,
-                step:10,
                 end:100,
-                template:function(value){
-                return value%20?"":value
-                }
+                step:25
             },
-            //data: dataset
+            tooltip:{
+                template: "#ele#"
+            },
           }, 
           { 
+            id:"points",
             view:"datatable", 
+            select:"row",
+            multiselect:false,
+            editable:true,
+            editaction:"dblclick",
             columns:[
-    				{id:"id", header:"", width:50, sort:"int"},
-                  	{id:"lon", header:"Longitude",  fillspace:true},
-                  	{id:"lat", header:"Latitute",  fillspace:true}
+    				{id:"id", header:"", width:50, editor:"text", sort:"int"},
+                  	{id:"lon", header:"Longitude",  editor:"text", fillspace:true},
+                    {id:"lat", header:"Latitute",  editor:"text", fillspace:true}, 
+                    {id:"ele", header:"Sea Level", editor:"text", fillspace:true}, 
                   ]
            }  
       ]}
