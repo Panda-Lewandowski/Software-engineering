@@ -32,9 +32,10 @@ def add_poly(request):
                 'ele': 0
             })
             
-        route = Route(title=request.POST['name'], date=datetime.now(), length=round(length, 4), points=json_points)
+        route = Route(title=request.POST['name'], date=datetime.now().date(), 
+                      length=round(length, 4), points=json_points)
         if Route.objects.all().count() > 1:
-            Route.objects.all().delete() #FIXME
+            Route.objects.all().delete() # FIXME
         
         route.save()
 
@@ -81,9 +82,66 @@ def delete_route(request):
         route.delete()
         return JsonResponse({'status':'ok'}) 
 
+
 def delete_point(request):
     if request.method == "POST":
         route = Route.objects.filter(id__exact=request.POST['id_route'])[0]
         route.points.pop(int(request.POST['id_point']) - 1)
         route.save()
         return JsonResponse({'status':'ok'}) 
+
+
+def edit_route(request):
+    if request.method == "POST":
+        route = Route.objects.filter(id__exact=request.POST['id'])[0]
+        qual = request.POST['qual']
+        new_value = request.POST['val']
+
+        if qual == 'name':
+            route.title = new_value
+        elif qual == 'date':
+            route.date = datetime.strptime(new_value, "%Y-%m-%d").date()
+
+        route.save()
+        return JsonResponse({'status':'ok'}) 
+
+
+def edit_point(request):
+    if request.method == "POST":
+        route = Route.objects.filter(id__exact=request.POST['id_route'])[0]
+        qual = request.POST['qual']
+        new_value = float(request.POST['val'])
+        j = int(request.POST['id']) - 1
+
+        val = None
+
+        if qual == 'lon':
+            route.points[j]['lon'] = new_value
+            length = R * acos(sin(route.points[0]['lon']) * sin(route.points[-1]['lon']) +
+                          cos(route.points[0]['lon']) * cos(route.points[-1]['lon']) *
+                          cos(route.points[0]['lat'] - route.points[-1]['lat']))
+
+            val = round(length, 4)
+        elif qual == 'lat':
+            route.points[j]['lon'] = new_value
+            length = R * acos(sin(route.points[0]['lon']) * sin(route.points[-1]['lon']) +
+                          cos(route.points[0]['lon']) * cos(route.points[-1]['lon']) *
+                          cos(route.points[0]['lat'] - route.points[-1]['lat']))
+            val = round(length, 4)
+        elif qual == 'ele':
+            route.points[j]['ele'] = new_value
+            eles = []
+            for i in range(len(route.points)):
+                p = route.points[i]['ele']
+                length = R * acos(sin(route.points[0]['lon']) * sin(route.points[i]['lon']) +
+                          cos(route.points[0]['lon']) * cos(route.points[i]['lon']) *
+                          cos(route.points[0]['lat'] - route.points[i]['lat']))
+
+                eles.append({
+                    'id':i,
+                    'ele':p,
+                    'x':round(length, 3)
+                })
+
+            val = eles
+        return JsonResponse({'val': val}) 

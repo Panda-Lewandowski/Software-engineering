@@ -9,5 +9,7 @@ urlpatterns = [
     url(r"^getele/$", views.get_ele),
     url(r"^delroute/$", views.delete_route),
     url(r"^delpoint/$", views.delete_point),
+    url(r"^editroute/$", views.edit_route),
+    url(r"^editpoint/$", views.edit_point),
     url(r'^$', views.index)
 ]

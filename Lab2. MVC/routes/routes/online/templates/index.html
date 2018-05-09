@@ -99,9 +99,16 @@
                         });
                     },
                     onAfterEditStop:function(state, editor, ignoreUpdate){
-                        if(state.value != state.old){
-                            webix.message("Cell value was changed")
-                        }
+                        var item = this.getSelectedId();
+                        webix.ajax().post("editroute/", { id: item.id, qual: item.column, val: state.value}, function(text){
+                            if(state.value != state.old){
+                                webix.message("Cell value was changed")
+                            }
+                            
+                        });
+                        
+                        this.unselectAll();
+                 
                     }
             },
 				columns:[
@@ -182,11 +189,36 @@
             editable:true,
             editaction:"dblclick",
             columns:[
-    				{id:"id", header:"", width:50, editor:"text", sort:"int"},
+    				{id:"id", header:"", width:50, sort:"int"},
                   	{id:"lon", header:"Longitude",  editor:"text", fillspace:true},
                     {id:"lat", header:"Latitute",  editor:"text", fillspace:true}, 
                     {id:"ele", header:"Sea Level", editor:"text", fillspace:true}, 
-                  ]
+                  ],
+            on: {
+                onAfterEditStop:function(state, editor, ignoreUpdate){
+                        var item = this.getSelectedId();
+                        var route = $$("table").getSelectedId();
+                        
+                        webix.ajax().post("editpoint/", { id: item.id, id_route: route.id, qual: item.column, val: state.value}, function(text){
+                            if(state.value != state.old){
+                                webix.message("Cell value was changed")
+                            }
+                            var ans = JSON.parse(text);
+                            if (item.column == 'ele') {
+                                $$("lvl").clearAll();
+                                $$("lvl").define("data", ans.val);
+                                $$("lvl").refresh();
+                            }
+                            else if (item.column == 'lon' || ite.column == 'lat') {
+                                var len_item = $$('table').getItem(route.id);
+                                len_item['len'] = ans.val;
+                                $$('table').refresh();
+                                //alert(JSON.stringify(len_item));
+                            }
+                        });
+                        this.unselectAll();
+                    }
+            }
            }  
       ]}
     ]

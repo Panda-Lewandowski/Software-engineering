@@ -1,11 +1,12 @@
 from django.db import models
 from django.contrib.postgres.fields import JSONField
+import datetime
 
 
 class Route(models.Model):
     id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=50, default=id)
-    date = models.DateField(auto_now=True) 
+    date = models.DateField(default=datetime.date.today) 
     length = models.PositiveIntegerField(default=0)
 
     points = JSONField(default=[
