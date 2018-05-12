@@ -5,6 +5,9 @@ from .models import Route
 from datetime import datetime
 from math import sin, cos, acos
 import json
+import os
+import gpxpy
+import gpxpy.gpx
 
 R = 6371  # Polar radius
 
@@ -72,7 +75,7 @@ def get_ele(request):
                 'ele':p,
                 'x':round(length, 3)
             })
-        h = (min_ele + max_ele) / 10
+        h = (min_ele + max_ele) / len(eles)
         return JsonResponse({'min':min_ele, 'max':max_ele, 'h':h, 'eles':eles}) 
 
 
@@ -145,3 +148,60 @@ def edit_point(request):
 
             val = eles
         return JsonResponse({'val': val}) 
+
+
+def upload(request):
+    if request.method == 'POST' and request.FILES['upload']:
+        file = request.FILES['upload']
+
+        if file.name.split(".")[-1] != 'gpx':
+            return JsonResponse({"status":"error"}) 
+
+        with open('/tmp/' + file.name, 'wb+') as destination:
+            for chunk in file.chunks():
+                destination.write(chunk)
+
+        with open('/tmp/' + file.name, 'r') as destination:
+            gpx = gpxpy.parse(destination)
+
+            json_points = []
+            i = 0
+            for track in gpx.tracks:
+                for segment in track.segments:
+                    for p in segment.points:
+                        if p.elevation is not None:
+                            json_points.append({
+                                'id':i+1,
+                                'lat': p.latitude,
+                                'lon': p.longitude,
+                                'ele': p.elevation
+                            })
+                        else:
+                            json_points.append({
+                                'id':i+1,
+                                'lat': p.latitude,
+                                'lon': p.longitude,
+                                'ele': 0
+                            })
+                        
+                        i += 1
+
+                
+            route = Route(title=file.name.split(".")[:-1], date=datetime.now().date(), 
+                      length=gpx.length_2d(), points=json_points)
+
+            if Route.objects.all().count() > 1:
+                Route.objects.all().delete() # FIXME
+        
+            route.save()
+            return JsonResponse({
+                                    "status":"server", 
+                                    'id':route.id, 
+                                    'name':route.title, 
+                                    'len':round(route.length, 4), 
+                                    'date':route.date
+                                }) 
+
+        os.remove('/tmp/' + file.name)
+
+    return JsonResponse({"status":"server"}) 

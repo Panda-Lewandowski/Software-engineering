@@ -357,7 +357,11 @@ class Importer:
             logging.warning("The route was not entered")
         else:
             with open(file[0], 'r') as gpx_file:
-                gpx = gpxpy.parse(gpx_file)
+                try:
+                    gpx = gpxpy.parse(gpx_file)
+                except gpxpy.gpx.GPXXMLSyntaxException:
+                    QtWidgets.QMessageBox.critical(None, "Error!", "Error!",
+                                                   defaultButton=QtWidgets.QMessageBox.Ok)
                 RoutesCreator.create_route(gpx, file[0], win)
                 logging.debug("The route from {0} was be loaded.".format(file[0]))
                 win.statusbar.showMessage("The route from {0} was loaded.".format(file[0]))

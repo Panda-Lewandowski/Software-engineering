@@ -87,7 +87,6 @@
                                     $$("points").add(points[i]);
                                 }
                         });
-
                         webix.ajax().post("getele/", { id: item.id}, function(text){
                                 var res = JSON.parse(text);
                                 var min_e = res.min;
@@ -132,30 +131,50 @@
                     id:"gpx_form", 
                     elements:[
                     { view:"text", label:"Name", name:"name", value:"MyRoute1" },
-                    { view:"text", label:"Polyline", name:"poly", value:"_p~iF~ps|U_ulLnnqC_mqNvxq`@" }]} ,
+                    { view:"text", label:"Polyline", name:"poly", value:"_p~iF~ps|U_ulLnnqC_mqNvxq`@" },
+                    { view:"button", value:"Add" , type:"form", click:function(){
+                                var values = $$("gpx_form").getValues();
+                                webix.ajax().post("addpoly/", { name: values.name, poly: values.poly}, function(text){
+                                        $$("table").add(JSON.parse(text));
+                                        $$("table").hideOverlay();
+                                        webix.message("Your post was added."); //show server side response
+                                });
+                    
+                            
+                    }}
+                ]
+                },
                 { rows:[ 
                     { template:"or", type:"section"},
                     { 
                         view: "uploader", value: 'Upload file', 
+                        //autosend:false,
+                        id:"uploader",
                         name:"gpx",
                         link:"gpxlist", 
-                        upload:"https://docs.webix.com/samples/21_upload/php/upload.php" 
-                    },
-                    {
-                        view:"list",  id:"gpxlist", type:"uploader",
-                        autoheight:true, borderless:true	
-                        },
-                ]},
-                { margin:5, 
-                    cols:[
-                    { view:"button", value:"Add" , type:"form", click:function(){
-                            var values = $$("gpx_form").getValues();
-                            webix.ajax().post("addpoly/", { name: values.name, poly: values.poly}, function(text){
-                                $$("table").add(JSON.parse(text));
+                        upload:"upload/",
+                        on: {
+                            onBeforeFileAdd:function(item){
+                                var type = item.type.toLowerCase();
+                                if (type != "gpx"){
+                                    webix.alert("Sorry! Only GPX files are supported!");
+                                    return false;
+                                }
+                            },
+                            onFileUploadError:function(file, response) {
+                                alert("Sorry! An error occurred while parsing the file!");
+                                return false;
+                            },
+                            onFileUpload:function(response){
+                                $$("table").add({ id:response.id, name:response.name[0], len:response.len, date:response.date});
                                 $$("table").hideOverlay();
-                            webix.message("Your post was added."); //show server side response
-                        });
-                    }}
+                                $$('table').refresh();
+                                webix.message("Your post from " + response.name + " was added.");
+                                return true;
+                            }
+                        }
+                            
+                    }
                 ]}
             ]
         }
