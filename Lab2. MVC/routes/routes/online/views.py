@@ -8,13 +8,28 @@ import json
 import os
 import gpxpy
 import gpxpy.gpx
+import reversion
+from reversion.models import Version
 
 R = 6371  # Polar radius
 
 def index(request):
+    routes = Route.objects.all()
+    data = '['
+    for r in routes:
+        data += json.dumps({'id':r.id,
+                            'name':r.title, 
+                            'len':r.length, 
+                            'date':datetime.strftime(r.date, "%Y-%m-%d")}) + ','
+
+    if data != '[':
+        data = data[:-1] + ']'
+    else:
+        data += ']' 
     return render(
         request,
         'index.html',
+        {"json_data":data}
 
     )
 
@@ -34,13 +49,12 @@ def add_poly(request):
                 'lon': p[i][1],
                 'ele': 0
             })
+
+        with reversion.create_revision(): 
+            route = Route(title=request.POST['name'], date=datetime.now().date(), 
+                        length=round(length, 4), points=json_points)
             
-        route = Route(title=request.POST['name'], date=datetime.now().date(), 
-                      length=round(length, 4), points=json_points)
-        if Route.objects.all().count() > 1:
-            Route.objects.all().delete() # FIXME
-        
-        route.save()
+            route.save()
 
         data = {'id':route.id, 'name':route.title, 'len':route.length, 'date':route.date}
     
@@ -61,21 +75,26 @@ def get_ele(request):
         max_ele = None
         for i in range(len(route.points)):
             p = route.points[i]['ele']
-            if min_ele is None or p < min_ele:
-                min_ele = p
-            if max_ele is None or p > max_ele:
-                max_ele = p
+            if p is not None:
+                if min_ele is None or p < min_ele:
+                    min_ele = p
+                if max_ele is None or p > max_ele:
+                    max_ele = p
 
-            length = R * acos(sin(route.points[0]['lon']) * sin(route.points[i]['lon']) +
-                          cos(route.points[0]['lon']) * cos(route.points[i]['lon']) *
-                          cos(route.points[0]['lat'] - route.points[i]['lat']))
+                length = R * acos(sin(route.points[0]['lon']) * sin(route.points[i]['lon']) +
+                            cos(route.points[0]['lon']) * cos(route.points[i]['lon']) *
+                            cos(route.points[0]['lat'] - route.points[i]['lat']))
 
-            eles.append({
-                'id':i,
-                'ele':p,
-                'x':round(length, 3)
-            })
-        h = (min_ele + max_ele) / len(eles)
+                eles.append({
+                    'id':i,
+                    'ele':p,
+                    'x':round(length, 3)
+                })
+        if min_ele is not None and max_ele is not None:
+            h = (min_ele + max_ele) / 10
+        else:
+            h = 0
+
         return JsonResponse({'min':min_ele, 'max':max_ele, 'h':h, 'eles':eles}) 
 
 
@@ -88,65 +107,82 @@ def delete_route(request):
 
 def delete_point(request):
     if request.method == "POST":
-        route = Route.objects.filter(id__exact=request.POST['id_route'])[0]
-        route.points.pop(int(request.POST['id_point']) - 1)
-        route.save()
+        with reversion.create_revision(): 
+            route = Route.objects.filter(id__exact=request.POST['id_route'])[0]
+            route.points.pop(int(request.POST['id_point']) - 1)
+            route.save()
         return JsonResponse({'status':'ok'}) 
 
 
 def edit_route(request):
     if request.method == "POST":
-        route = Route.objects.filter(id__exact=request.POST['id'])[0]
-        qual = request.POST['qual']
-        new_value = request.POST['val']
+        with reversion.create_revision(): 
+            route = Route.objects.filter(id__exact=request.POST['id'])[0]
+            qual = request.POST['qual']
+            new_value = request.POST['val']
 
-        if qual == 'name':
-            route.title = new_value
-        elif qual == 'date':
-            route.date = datetime.strptime(new_value, "%Y-%m-%d").date()
+            if qual == 'name':
+                route.title = new_value
+            elif qual == 'date':
+                route.date = datetime.strptime(new_value, "%Y-%m-%d").date()
 
-        route.save()
+            route.save()
         return JsonResponse({'status':'ok'}) 
 
 
-def edit_point(request):
+def edit_point(request): #FIXME
     if request.method == "POST":
-        route = Route.objects.filter(id__exact=request.POST['id_route'])[0]
-        qual = request.POST['qual']
-        new_value = float(request.POST['val'])
-        j = int(request.POST['id']) - 1
+        with reversion.create_revision(): 
+            route = Route.objects.filter(id__exact=request.POST['id_route'])[0]
+            qual = request.POST['qual']
+            new_value = float(request.POST['val'])
+            j = int(request.POST['id']) - 1
 
-        val = None
+            val = None
 
-        if qual == 'lon':
-            route.points[j]['lon'] = new_value
-            length = R * acos(sin(route.points[0]['lon']) * sin(route.points[-1]['lon']) +
-                          cos(route.points[0]['lon']) * cos(route.points[-1]['lon']) *
-                          cos(route.points[0]['lat'] - route.points[-1]['lat']))
+            if qual == 'lon':
+                route.points[j]['lon'] = new_value
+                route.save()
+                length = R * acos(sin(route.points[0]['lon']) * sin(route.points[-1]['lon']) +
+                            cos(route.points[0]['lon']) * cos(route.points[-1]['lon']) *
+                            cos(route.points[0]['lat'] - route.points[-1]['lat']))
 
-            val = round(length, 4)
-        elif qual == 'lat':
-            route.points[j]['lon'] = new_value
-            length = R * acos(sin(route.points[0]['lon']) * sin(route.points[-1]['lon']) +
-                          cos(route.points[0]['lon']) * cos(route.points[-1]['lon']) *
-                          cos(route.points[0]['lat'] - route.points[-1]['lat']))
-            val = round(length, 4)
-        elif qual == 'ele':
-            route.points[j]['ele'] = new_value
-            eles = []
-            for i in range(len(route.points)):
-                p = route.points[i]['ele']
-                length = R * acos(sin(route.points[0]['lon']) * sin(route.points[i]['lon']) +
-                          cos(route.points[0]['lon']) * cos(route.points[i]['lon']) *
-                          cos(route.points[0]['lat'] - route.points[i]['lat']))
+                val = round(length, 4)
+            elif qual == 'lat':
+                route.points[j]['lon'] = new_value
+                route.save()
+                length = R * acos(sin(route.points[0]['lon']) * sin(route.points[-1]['lon']) +
+                            cos(route.points[0]['lon']) * cos(route.points[-1]['lon']) *
+                            cos(route.points[0]['lat'] - route.points[-1]['lat']))
+                val = round(length, 4)
+            elif qual == 'ele':
+                route.points[j]['ele'] = new_value
+                route.save()
+                eles = []
+                min_ele = None
+                max_ele = None
+                for i in range(len(route.points)):
+                    p = route.points[i]['ele']
+                    if p is not None:
+                        if min_ele is None or p < min_ele:
+                            min_ele = p
+                        if max_ele is None or p > max_ele:
+                            max_ele = p
 
-                eles.append({
-                    'id':i,
-                    'ele':p,
-                    'x':round(length, 3)
-                })
+                        length = R * acos(sin(route.points[0]['lon']) * sin(route.points[i]['lon']) +
+                                cos(route.points[0]['lon']) * cos(route.points[i]['lon']) *
+                                cos(route.points[0]['lat'] - route.points[i]['lat']))
 
-            val = eles
+
+                        eles.append({
+                            'id':i,
+                            'ele':p,
+                            'x':round(length, 3)
+                        })
+                if min_ele is not None and max_ele is not None:
+                    h = (min_ele + max_ele) / 10
+                
+            return JsonResponse({'val': eles, 'min':min_ele, 'max':max_ele, 'h':h})
         return JsonResponse({'val': val}) 
 
 
@@ -169,31 +205,21 @@ def upload(request):
             for track in gpx.tracks:
                 for segment in track.segments:
                     for p in segment.points:
-                        if p.elevation is not None:
-                            json_points.append({
-                                'id':i+1,
-                                'lat': p.latitude,
-                                'lon': p.longitude,
-                                'ele': p.elevation
-                            })
-                        else:
-                            json_points.append({
-                                'id':i+1,
-                                'lat': p.latitude,
-                                'lon': p.longitude,
-                                'ele': 0
-                            })
+                        json_points.append({
+                            'id':i+1,
+                            'lat': p.latitude,
+                            'lon': p.longitude,
+                            'ele': p.elevation
+                        })
+                        
                         
                         i += 1
 
-                
-            route = Route(title=file.name.split(".")[:-1], date=datetime.now().date(), 
-                      length=gpx.length_2d(), points=json_points)
-
-            if Route.objects.all().count() > 1:
-                Route.objects.all().delete() # FIXME
-        
-            route.save()
+            with reversion.create_revision():     
+                route = Route(title=file.name.split(".")[:-1], date=datetime.now().date(), 
+                        length=gpx.length_2d(), points=json_points)
+            
+                route.save()
             return JsonResponse({
                                     "status":"server", 
                                     'id':route.id, 
@@ -205,3 +231,14 @@ def upload(request):
         os.remove('/tmp/' + file.name)
 
     return JsonResponse({"status":"server"}) 
+
+
+def delete_all(request):
+    count = Route.objects.all().delete()
+    return JsonResponse({"status":"server", "n":count[0]}) 
+
+
+def undo(request):
+    versions = Version.objects.get_for_object(Route.objects.all()[0])
+    print(versions)
+    return JsonResponse({"status":"server", "ver":versions}) 

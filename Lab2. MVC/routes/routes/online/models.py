@@ -1,8 +1,9 @@
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 import datetime
+import reversion
 
-
+@reversion.register()
 class Route(models.Model):
     id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=50, default=id)
@@ -31,17 +32,12 @@ class Route(models.Model):
     ])
 
     
-
-
-
     class Meta:
         ordering = ["id"]
 
-    # def get_absolute_url(self):
-    #      """
-    #      Returns the url to access a particular instance of Post.
-    #      """
-    #      return reverse('post', args=[str(self.id)])
     
     def __str__(self):
         return self.title
+
+    def get_eles(self):
+        pass

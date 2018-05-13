@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'online.apps.OnlineConfig'
+    'online.apps.OnlineConfig',
+    'reversion'
 ]
 
 MIDDLEWARE = [

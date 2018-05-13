@@ -55,9 +55,24 @@
                         });
 
                 }
-            }
+                }
             },
-          	{ view:"button", value:"Undo", width:100 },
+            { view:"button", value:"Delete all", width:100, click:function(){
+                webix.ajax("deleteall/", function(text){
+                        var ans = JSON.parse(text);
+                        $$("table").clearAll();
+                        $$("lvl").clearAll();
+                        $$("points").clearAll();
+                        webix.message(ans.n + " routes were deleted.");
+                    });
+                }
+            },
+          	{ view:"button", value:"Undo", width:100, click:function(){
+                webix.ajax("undo/", function(text){
+                    alert(text);
+                    });                  
+                } 
+            },
          	{ view:"button", value:"Redo", width:100 }
         ]},
         { cols:[
@@ -117,10 +132,10 @@
                   	{id:"date", header:"Date", width:250, editor:"text", fillspace:true}
                   ],
                 autoheight:true,
-                data: [{% if json_data  %} 
+                data: {% if json_data  %} 
                     JSON.parse('{{ json_data|safe }}')
                     {% endif %}
-                ]
+                
             },
             {  
             view:"form", 
@@ -174,6 +189,10 @@
                             }
                         }
                             
+                    }, 
+                    {
+                        view:"list",  id:"gpxlist", type:"uploader",
+                        autoheight:true, borderless:true
                     }
                 ]}
             ]
@@ -225,7 +244,11 @@
                             var ans = JSON.parse(text);
                             if (item.column == 'ele') {
                                 $$("lvl").clearAll();
+                                var min_e = ans.min;
+                                var max_e = ans.max;
+                                var h = ans.h;
                                 $$("lvl").define("data", ans.val);
+                                $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
                                 $$("lvl").refresh();
                             }
                             else if (item.column == 'lon' || ite.column == 'lat') {
