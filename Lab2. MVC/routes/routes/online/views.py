@@ -294,12 +294,53 @@ def undo(request):
                 return JsonResponse({"status":"server", "act": "edit_point", 
                             "val": {"id":route.id, "points":route.points}}) 
 
-            # del_route
             return JsonResponse({"status":"uknown operation"}) 
             
         except OperationStack.DoesNotExist:
-            return JsonResponse({"status":"error"})
-           
-        
+            return JsonResponse({"status":"error"})       
     else: 
         return JsonResponse({"status":"nothing"})
+
+
+def redo(request):
+    if settings.INDEX < OperationStack.objects.all().count():
+        try:
+            settings.INDEX += 1 
+            op = OperationStack.objects.get(id__exact=settings.INDEX)
+            try:
+                route = Route.objects.get(id__exact=op.pk_route)
+            except Route.DoesNotExist:
+                if op.op != "add_poly" and op.op != "add_gpx":
+                    return JsonResponse({"status":"error"})
+                else: 
+                    deleted = Version.objects.get_deleted(Route)
+                    deleted.get_for_object_reference(Route, op.pk_route)[0].revert()
+                    route = Route.objects.get(id__exact=op.pk_route)
+                    return JsonResponse({"status":"server", "act": "add",
+                                         "val": {'id':route.id, 'name':route.title, 'len':route.length, 'date':route.date}}) 
+            
+            if op.op == "edit_point" or op.op == "del_point":
+                versions = Version.objects.get_for_object(route)
+                print(versions, len(versions) - op.num_version)
+                versions[len(versions) - op.num_version].revision.revert()
+                route.refresh_from_db()
+                return JsonResponse({"status":"server", "act": "edit_point", 
+                            "val": {"id":route.id, "points":route.points}})
+            if op.op == "edit_route":
+                versions = Version.objects.get_for_object(route)
+                versions[len(versions) - op.num_version].revision.revert()
+                route.refresh_from_db()
+                return JsonResponse({"status":"server", "act": "edit_route", 
+                            "val": {'id':route.id, 'name':route.title, 'len':route.length, 'date':route.date}})
+            
+            if op.op == "del_route":
+                route.delete()
+                return JsonResponse({"status":"server", "act": "remove", "val": op.pk_route}) 
+
+            return JsonResponse({"status":"uknown operation"}) 
+
+        except OperationStack.DoesNotExist:
+            print(OperationStack.objects.all())
+            return JsonResponse({"status":"error"}) 
+
+    return JsonResponse({"status":"nothing"})

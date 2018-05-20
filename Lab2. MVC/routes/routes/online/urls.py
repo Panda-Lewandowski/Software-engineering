@@ -14,5 +14,6 @@ urlpatterns = [
     url(r"^upload/$", views.upload),
     url(r"^deleteall/$", views.delete_all),
     url(r"^undo/$", views.undo),
+    url(r"^redo/$", views.redo),
     url(r'^$', views.index)
 ]

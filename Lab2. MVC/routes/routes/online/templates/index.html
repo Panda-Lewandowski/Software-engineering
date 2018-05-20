@@ -115,12 +115,69 @@
                             $$("lvl").clearAll();
                             $$("points").clearAll();
                         }
+
+                        
+
                     }
                     
                     });                  
                 } 
             },
-         	{ view:"button", value:"Redo", width:100 }
+         	{ view:"button", value:"Redo", width:100, click:function() {
+                webix.ajax("redo/", function(text){ 
+                    var ans = JSON.parse(text);
+                    if (ans.status == "error") {
+                        webix.alert("Error has occurred while processing!");
+                    }
+                    if (ans.status == "nothing") {
+                        webix.alert("Nothing to redo!");
+                    }
+                    if (ans.status == "unknown operation") {
+                        webix.alert("Unknown operation!");
+                    }
+
+                    if (ans.status == "server") {
+                        if (ans.act == "add") {
+                        $$("table").add(ans.val);
+                        $$("table").refresh();
+                        $$("lvl").clearAll();
+                        $$("points").clearAll();
+                        }
+
+                        if (ans.act == "edit_point") {
+                            $$("table").select(ans.val.id);
+                            $$("points").define("data", ans.val.points);
+                            $$("points").sort("id")
+                            $$("points").refresh();
+                            $$("lvl").clearAll();
+                            webix.ajax().post("getele/", { id: ans.val.id}, function(text){
+                                var res = JSON.parse(text);
+                                var min_e = res.min;
+                                var max_e = res.max;
+                                var h = res.h;
+                                $$("lvl").define("data", res.eles);
+                                $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
+                                $$("lvl").refresh();
+                        });
+                        }
+
+                        if (ans.act == "edit_route") {
+                            $$("table").updateItem(ans.val.id, ans.val);
+                            $$("table").refresh();
+                        }
+
+                        if (ans.act == "remove") {
+                        $$("table").remove(ans.val);
+                        $$("table").refresh();
+                        $$("lvl").clearAll();
+                        $$("points").clearAll();
+                        }
+                    }
+
+            
+                }); 
+             } 
+             }
         ]},
         { cols:[
             { width:900, 
@@ -167,9 +224,6 @@
                             }
                             
                         });
-                        
-                        //this.unselectAll();
-                        //$$("points").clearAll();
                  
                     }
             },
