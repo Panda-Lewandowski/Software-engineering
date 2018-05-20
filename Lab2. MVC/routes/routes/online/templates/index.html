@@ -20,7 +20,7 @@
             { view:"button", value:"Delete route", width:100, click:function(){
                     var item =  $$("table").getSelectedItem();
                     if (item === undefined)
-                        alert("There are no selected routes.");
+                        webix.alert("There are no selected routes.");
                     else {
                         webix.ajax().post("delroute/", { id: item.id}, function(text){
                             webix.message("Route was deleted.")
@@ -35,7 +35,7 @@
             { view:"button", value:"Delete point", width:100, click:function(){
                 var item =  $$("points").getSelectedItem();
                 if (item === undefined)
-                        alert("There are no selected points.");
+                    webix.alert("There are no selected points.");
                 else {
                         var item_table =  $$("table").getSelectedItem();
                         webix.ajax().post("delpoint/", { id_route: item_table.id, id_point: item.id}, function(text){
@@ -69,7 +69,54 @@
             },
           	{ view:"button", value:"Undo", width:100, click:function(){
                 webix.ajax("undo/", function(text){
-                    alert(text);
+                    var ans = JSON.parse(text);
+                    if (ans.status == "error") {
+                        webix.alert("Error has occurred while processing!");
+                    }
+                    if (ans.status == "nothing") {
+                        webix.alert("Nothing to undo!");
+                    }
+                    if (ans.status == "unknown operation") {
+                        webix.alert("Unknown operation!");
+                    }
+                    if (ans.status == "server") {
+                        if (ans.act == "remove") {
+                        $$("table").remove(ans.val);
+                        $$("table").refresh();
+                        $$("lvl").clearAll();
+                        $$("points").clearAll();
+                        }
+
+                        if (ans.act == "edit_route") {
+                            $$("table").updateItem(ans.val.id, ans.val);
+                            $$("table").refresh();
+                        }
+
+                        if (ans.act == "edit_point") {
+                            $$("table").select(ans.val.id);
+                            $$("points").define("data", ans.val.points);
+                            $$("points").sort("id")
+                            $$("points").refresh();
+                            $$("lvl").clearAll();
+                            webix.ajax().post("getele/", { id: ans.val.id}, function(text){
+                                var res = JSON.parse(text);
+                                var min_e = res.min;
+                                var max_e = res.max;
+                                var h = res.h;
+                                $$("lvl").define("data", res.eles);
+                                $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
+                                $$("lvl").refresh();
+                        });
+                        }
+
+                        if (ans.act == "add") {
+                            $$("table").add(ans.val);
+                            $$("table").refresh();
+                            $$("lvl").clearAll();
+                            $$("points").clearAll();
+                        }
+                    }
+                    
                     });                  
                 } 
             },
@@ -121,7 +168,8 @@
                             
                         });
                         
-                        this.unselectAll();
+                        //this.unselectAll();
+                        //$$("points").clearAll();
                  
                     }
             },

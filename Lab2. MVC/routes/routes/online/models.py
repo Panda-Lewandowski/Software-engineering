@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField
 import datetime
 import reversion
+from routes import settings
 
 @reversion.register()
 class Route(models.Model):
@@ -39,5 +40,20 @@ class Route(models.Model):
     def __str__(self):
         return self.title
 
-    def get_eles(self):
-        pass
+@reversion.register()
+class OperationStack(models.Model):
+    op = models.CharField(max_length=50, default="edit")
+    pk_route = models.PositiveIntegerField(default=0)
+    num_version = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["id"]
+
+    def save(self, *args, **kwargs):        
+        super().save(*args, **kwargs)  # Call the "real" save() method.
+        settings.INDEX += 1 
+
+    def __str__(self):
+        return str(self.op) + "#" + str(self.id) +" on " + str(self.pk_route) + " route (v."+ str(self.num_version) + ")"
+
+

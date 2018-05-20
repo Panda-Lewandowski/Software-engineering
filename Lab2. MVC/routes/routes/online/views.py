@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from polyline import encode, decode 
-from .models import Route
 from datetime import datetime
 from math import sin, cos, acos
 import json
@@ -10,8 +9,11 @@ import gpxpy
 import gpxpy.gpx
 import reversion
 from reversion.models import Version
+from .models import Route, OperationStack 
+from routes import settings
 
 R = 6371  # Polar radius
+
 
 def index(request):
     routes = Route.objects.all()
@@ -55,6 +57,11 @@ def add_poly(request):
                         length=round(length, 4), points=json_points)
             
             route.save()
+
+            op = OperationStack(op='add_poly', pk_route=route.id, num_version=0)
+            op.save()
+
+
 
         data = {'id':route.id, 'name':route.title, 'len':route.length, 'date':route.date}
     
@@ -101,7 +108,11 @@ def get_ele(request):
 def delete_route(request):
     if request.method == "POST":
         route = Route.objects.filter(id__exact=request.POST['id'])[0]
+        ver = Version.objects.get_for_object(route)
+        op = OperationStack(op='del_route', pk_route=route.id, num_version=len(ver)+1)
+        op.save()
         route.delete()
+        
         return JsonResponse({'status':'ok'}) 
 
 
@@ -111,6 +122,9 @@ def delete_point(request):
             route = Route.objects.filter(id__exact=request.POST['id_route'])[0]
             route.points.pop(int(request.POST['id_point']) - 1)
             route.save()
+            ver = Version.objects.get_for_object(route)
+            op = OperationStack(op='del_point', pk_route=route.id, num_version=len(ver)+1)
+            op.save()
         return JsonResponse({'status':'ok'}) 
 
 
@@ -126,6 +140,9 @@ def edit_route(request):
             elif qual == 'date':
                 route.date = datetime.strptime(new_value, "%Y-%m-%d").date()
 
+            ver = Version.objects.get_for_object(route)
+            op = OperationStack(op='edit_route', pk_route=route.id, num_version=len(ver)+1)
+            op.save()
             route.save()
         return JsonResponse({'status':'ok'}) 
 
@@ -181,6 +198,10 @@ def edit_point(request): #FIXME
                         })
                 if min_ele is not None and max_ele is not None:
                     h = (min_ele + max_ele) / 10
+
+            ver = Version.objects.get_for_object(route)
+            op = OperationStack(op='edit_point', pk_route=route.id, num_version=len(ver)+1)
+            op.save()
                 
             return JsonResponse({'val': eles, 'min':min_ele, 'max':max_ele, 'h':h})
         return JsonResponse({'val': val}) 
@@ -220,6 +241,9 @@ def upload(request):
                         length=gpx.length_2d(), points=json_points)
             
                 route.save()
+
+                op = OperationStack(op='add_gpx', pk_route=route.id, num_version=0)
+                op.save()
             return JsonResponse({
                                     "status":"server", 
                                     'id':route.id, 
@@ -239,6 +263,43 @@ def delete_all(request):
 
 
 def undo(request):
-    versions = Version.objects.get_for_object(Route.objects.all()[0])
-    print(versions)
-    return JsonResponse({"status":"server", "ver":versions}) 
+    if settings.INDEX > 0: 
+        try:
+            op = OperationStack.objects.get(id__exact=settings.INDEX)
+            settings.INDEX -= 1
+            try:
+                route = Route.objects.get(id__exact=op.pk_route)
+            except Route.DoesNotExist:
+                    if op.op != "del_route":
+                        return JsonResponse({"status":"error"})
+                    else: 
+                        deleted = Version.objects.get_deleted(Route)
+                        deleted.get_for_object_reference(Route, op.pk_route)[0].revert()
+                        route = Route.objects.get(id__exact=op.pk_route)
+                        return JsonResponse({"status":"server", "act": "add",
+                                             "val": {'id':route.id, 'name':route.title, 'len':route.length, 'date':route.date}}) 
+            if op.op == "add_poly" or op.op == "add_gpx":
+                route.delete()
+                return JsonResponse({"status":"server", "act": "remove", "val": op.pk_route}) 
+            if op.op == "edit_route":
+                versions = Version.objects.get_for_object(route)
+                versions[len(versions) - op.num_version + 1].revision.revert()
+                route.refresh_from_db()
+                return JsonResponse({"status":"server", "act": "edit_route", 
+                            "val": {'id':route.id, 'name':route.title, 'len':route.length, 'date':route.date}}) 
+            if op.op == "edit_point" or op.op == "del_point":
+                versions = Version.objects.get_for_object(route)
+                versions[len(versions) - op.num_version + 1].revision.revert()
+                route.refresh_from_db()
+                return JsonResponse({"status":"server", "act": "edit_point", 
+                            "val": {"id":route.id, "points":route.points}}) 
+
+            # del_route
+            return JsonResponse({"status":"uknown operation"}) 
+            
+        except OperationStack.DoesNotExist:
+            return JsonResponse({"status":"error"})
+           
+        
+    else: 
+        return JsonResponse({"status":"nothing"})
