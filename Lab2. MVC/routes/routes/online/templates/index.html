@@ -23,10 +23,17 @@
                         webix.alert("There are no selected routes.");
                     else {
                         webix.ajax().post("delroute/", { id: item.id}, function(text){
-                            webix.message("Route was deleted.")
-                            $$("lvl").clearAll();
-                            $$("points").clearAll();
-                            $$("table").remove($$("table").getSelectedId()); 
+                            var res = JSON.parse(text);
+                            if (res.status == "ok") { 
+                                webix.message("Route was deleted.")
+                                $$("lvl").clearAll();
+                                $$("points").clearAll();
+                                $$("table").remove($$("table").getSelectedId());
+                            }
+                            else {
+                                webix.alert("Error while deleting!");
+                            }
+                             
                         });
                     }
                     

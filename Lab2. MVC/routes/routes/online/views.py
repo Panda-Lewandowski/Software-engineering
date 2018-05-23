@@ -67,7 +67,6 @@ def add_poly(request):
     
         return JsonResponse(data)
 
-
 def get_points(request):
     if request.method == "POST":
         route = Route.objects.filter(id__exact=request.POST['id'])[0]
@@ -107,13 +106,19 @@ def get_ele(request):
 
 def delete_route(request):
     if request.method == "POST":
-        route = Route.objects.filter(id__exact=request.POST['id'])[0]
-        ver = Version.objects.get_for_object(route)
-        op = OperationStack(op='del_route', pk_route=route.id, num_version=len(ver)+1)
-        op.save()
-        route.delete()
+        last = Route.objects.all()
+        id = len(last) - 1
+        if 0 < int(request.POST['id']) <= last[id].id:
+            route = Route.objects.filter(id__exact=request.POST['id'])[0]
+            ver = Version.objects.get_for_object(route)
+            op = OperationStack(op='del_route', pk_route=route.id, num_version=len(ver)+1)
+            op.save()
+            route.delete()
+            return JsonResponse({'status':'ok'}) 
+        else:
+            return JsonResponse({'status':'error'})
         
-        return JsonResponse({'status':'ok'}) 
+        
 
 
 def delete_point(request):
