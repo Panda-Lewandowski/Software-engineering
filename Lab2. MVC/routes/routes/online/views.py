@@ -54,7 +54,7 @@ def add_poly(request):
 
         with reversion.create_revision(): 
             route = Route(title=request.POST['name'], date=datetime.now().date(), 
-                        length=round(length, 4), points=json_points)
+                        length=round(length), points=json_points)
             
             route.save()
 
@@ -94,7 +94,7 @@ def get_ele(request):
                 eles.append({
                     'id':i,
                     'ele':p,
-                    'x':round(length, 3)
+                    'x':round(length, 2)
                 })
         if min_ele is not None and max_ele is not None:
             h = (min_ele + max_ele) / 10
@@ -118,19 +118,20 @@ def delete_route(request):
         else:
             return JsonResponse({'status':'error'})
         
-        
-
-
+    
 def delete_point(request):
     if request.method == "POST":
         with reversion.create_revision(): 
             route = Route.objects.filter(id__exact=request.POST['id_route'])[0]
-            route.points.pop(int(request.POST['id_point']) - 1)
-            route.save()
-            ver = Version.objects.get_for_object(route)
-            op = OperationStack(op='del_point', pk_route=route.id, num_version=len(ver)+1)
-            op.save()
-        return JsonResponse({'status':'ok'}) 
+            if 1 <= int(request.POST['id_point']) <= len(route.points):
+                route.points.pop(int(request.POST['id_point']) - 1)
+                route.save()
+                ver = Version.objects.get_for_object(route)
+                op = OperationStack(op='del_point', pk_route=route.id, num_version=len(ver)+1)
+                op.save()
+                return JsonResponse({'status':'ok'}) 
+            else:
+                return JsonResponse({'status':'error'}) 
 
 
 def edit_route(request):
@@ -143,7 +144,10 @@ def edit_route(request):
             if qual == 'name':
                 route.title = new_value
             elif qual == 'date':
-                route.date = datetime.strptime(new_value, "%Y-%m-%d").date()
+                try:
+                    route.date = datetime.strptime(new_value, "%Y-%m-%d").date()
+                except ValueError:
+                    return JsonResponse({'status':'invalid'}) 
 
             ver = Version.objects.get_for_object(route)
             op = OperationStack(op='edit_route', pk_route=route.id, num_version=len(ver)+1)
@@ -152,32 +156,44 @@ def edit_route(request):
         return JsonResponse({'status':'ok'}) 
 
 
-def edit_point(request): #FIXME
+def edit_point(request):
     if request.method == "POST":
         with reversion.create_revision(): 
             route = Route.objects.filter(id__exact=request.POST['id_route'])[0]
             qual = request.POST['qual']
-            new_value = float(request.POST['val'])
+            try:
+                new_value = float(request.POST['val'])
+            except ValueError:
+                return JsonResponse({'status': 'error'})
             j = int(request.POST['id']) - 1
 
             val = None
 
             if qual == 'lon':
+                if  abs(new_value) > 180:
+                    return JsonResponse({"status":"error"}) 
                 route.points[j]['lon'] = new_value
-                route.save()
+                
                 length = R * acos(sin(route.points[0]['lon']) * sin(route.points[-1]['lon']) +
                             cos(route.points[0]['lon']) * cos(route.points[-1]['lon']) *
                             cos(route.points[0]['lat'] - route.points[-1]['lat']))
 
-                val = round(length, 4)
-            elif qual == 'lat':
-                route.points[j]['lon'] = new_value
+                val = round(length)
+                route.length = val
                 route.save()
+            elif qual == 'lat':
+                if abs(new_value) > 180:
+                    return JsonResponse({"status":"error"}) 
+                route.points[j]['lon'] = new_value
                 length = R * acos(sin(route.points[0]['lon']) * sin(route.points[-1]['lon']) +
                             cos(route.points[0]['lon']) * cos(route.points[-1]['lon']) *
                             cos(route.points[0]['lat'] - route.points[-1]['lat']))
-                val = round(length, 4)
+                val = round(length)
+                route.length = val
+                route.save()
             elif qual == 'ele':
+                if new_value < -10_994 or new_value > 8848:
+                    return JsonResponse({"status":"error"}) 
                 route.points[j]['ele'] = new_value
                 route.save()
                 eles = []
@@ -199,7 +215,7 @@ def edit_point(request): #FIXME
                         eles.append({
                             'id':i,
                             'ele':p,
-                            'x':round(length, 3)
+                            'x':round(length, 2)
                         })
                 if min_ele is not None and max_ele is not None:
                     h = (min_ele + max_ele) / 10
@@ -207,9 +223,10 @@ def edit_point(request): #FIXME
             ver = Version.objects.get_for_object(route)
             op = OperationStack(op='edit_point', pk_route=route.id, num_version=len(ver)+1)
             op.save()
-                
-            return JsonResponse({'val': eles, 'min':min_ele, 'max':max_ele, 'h':h})
-        return JsonResponse({'val': val}) 
+        if qual == 'ele':       
+            return JsonResponse({'status':'ok', 'val': eles, 'min':min_ele, 'max':max_ele, 'h':h})
+        else:
+            return JsonResponse({'status':'ok', 'val': val}) 
 
 
 def upload(request):
@@ -253,7 +270,7 @@ def upload(request):
                                     "status":"server", 
                                     'id':route.id, 
                                     'name':route.title, 
-                                    'len':round(route.length, 4), 
+                                    'len':round(route.length), 
                                     'date':route.date
                                 }) 
 

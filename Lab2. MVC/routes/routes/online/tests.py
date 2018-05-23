@@ -78,8 +78,8 @@ class GetEleTests(TestCase):
         data = json.loads(data)
         self.assertEqual(data, {'min': 0, 'max': 0, 'h': 0.0, 
                                 'eles': [{'id': 0, 'ele': 0, 'x': 0.0}, 
-                                         {'id': 1, 'ele': 0, 'x': 4791.584}, 
-                                         {'id': 2, 'ele': 0, 'x': 6389.961}]})
+                                         {'id': 1, 'ele': 0, 'x': 4791.58}, 
+                                         {'id': 2, 'ele': 0, 'x': 6389.96}]})
 
     def test_get_ele_not_empty(self):
         pass
@@ -116,44 +116,208 @@ class DelPointTest(TestCase):
         self.assertEqual(response.status_code, 200)
         last = Route.objects.all()
         id = len(last) - 1
-        response = self.client.post(reverse('delroute'), data={'id': last[id].id})
-    
+        response = self.client.post(reverse('delpoint'), data={'id_route': last[id].id, 'id_point': 1})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'ok'})
+        route = Route.objects.get(title='test')
+        self.assertEqual(route.points, [{'id': 2, 'ele': 0, 'lat': 40.7, 'lon': -120.95}, 
+                                            {'id': 3, 'ele': 0, 'lat': 43.252, 'lon': -126.453}])
+
     def test_not_exist_point(self):
-        pass
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('delpoint'), data={'id_route': last[id].id, 'id_point': -1})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'error'})
+        route = Route.objects.get(title='test')
+        self.assertEqual(route.points, [{'id': 1, 'ele': 0, 'lat': 38.5, 'lon': -120.2}, 
+                                           {'id': 2, 'ele': 0, 'lat': 40.7, 'lon': -120.95}, 
+                                           {'id': 3, 'ele': 0, 'lat': 43.252, 'lon': -126.453}])
 
-
+ 
 class EditRouteTest(TestCase):
     def test_valid_title(self):
-        pass
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editroute'), data={'id': last[id].id, 'qual': 'name', 'val': 'supertest'})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'ok'})
+        route = Route.objects.get(id=last[id].id)
+        self.assertEqual(route.title, 'supertest')
 
     def test_not_valid_title(self):
-        pass
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editroute'), data={'id': last[id].id, 'qual': 'name', 'val': -1})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'ok'})
+        route = Route.objects.get(id=last[id].id)
+        self.assertEqual(route.title, '-1')
 
     def test_valid_data(self):
-        pass
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editroute'), data={'id': last[id].id, 'qual': 'date', 'val': str(datetime.now().date())})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'ok'})
+        route = Route.objects.get(id=last[id].id)
+        self.assertEqual(route.date, datetime.now().date())
 
     def test_not_valid_data(self):
-        pass
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editroute'), data={'id': last[id].id, 'qual': 'date', 'val': -1})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'invalid'})
+        route = Route.objects.get(id=last[id].id)
+        self.assertEqual(route.date, datetime.now().date())
 
 
 class EditPointTest(TestCase):
-    def test_valid(self):
-        pass
+    def test_valid_lat_lon(self):
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editpoint'), data={'id': 1, 'id_route': last[id].id, 'qual': 'lon', 'val': 32})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status': 'ok', 'val':12410})
+        route = Route.objects.get(id=last[id].id)
+        self.assertEqual(route.points[0]['lon'], 32)
+        self.assertEqual(route.length, 12410)
 
-    def test_not_valid_char(self):
-        pass
+    def test_valid_ele(self):
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editpoint'), data={'id': 1, 'id_route': last[id].id, 'qual': 'ele', 'val': 32})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status': 'ok', 'val': [{'id': 0, 'ele': 32.0, 'x': 0.0}, 
+                                        {'id': 1, 'ele': 0, 'x': 4791.58}, 
+                                        {'id': 2, 'ele': 0, 'x': 6389.96}], 
+                                        'min': 0, 'max':32.0, 'h': 3.2})
+        route = Route.objects.get(id=last[id].id)
+        self.assertEqual(route.points[0]['ele'], 32)
 
-    def test_not_valid_lon_lat_max(self):
-        pass
+    def test_not_valid_char_lon_lat(self):
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editpoint'), data={'id': 1, 'id_route': last[id].id, 'qual': 'lon', 'val': 'lon'})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'error'})
+        route = Route.objects.get(id=last[id].id)
+        self.assertEqual(route.points[0]['lon'], -120.2)
+        self.assertEqual(route.length, 9757)
 
-    def test_not_valid_lon_lat_min(self):
-        pass
+    def test_not_valid_char_ele(self):
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editpoint'), data={'id': 1, 'id_route': last[id].id, 'qual': 'ele', 'val': 'ele'})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'error'})
+        route = Route.objects.get(id=last[id].id)
+        self.assertEqual(route.points[0]['ele'], 0)
+
+    def test_not_valid_lon_max(self):
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editpoint'), data={'id': 1, 'id_route': last[id].id, 'qual': 'lon', 'val': 200})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'error'})
+
+    def test_not_valid_lon_min(self):
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editpoint'), data={'id': 1, 'id_route': last[id].id, 'qual': 'lon', 'val': -200})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'error'})
+
+    def test_not_valid_lat_max(self):
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editpoint'), data={'id': 1, 'id_route': last[id].id, 'qual': 'lat', 'val': 200})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'error'})
+
+    def test_not_valid_lat_min(self):
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editpoint'), data={'id': 1, 'id_route': last[id].id, 'qual': 'lat', 'val': -200})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'error'})
 
     def test_not_valid_ele_max(self):
-        pass
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editpoint'), data={'id': 1, 'id_route': last[id].id, 'qual': 'ele', 'val': 12_000})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'error'})
 
     def test_not_valid_ele_min(self):
-        pass
+        response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
+        self.assertEqual(response.status_code, 200)
+        last = Route.objects.all()
+        id = len(last) - 1
+        response = self.client.post(reverse('editpoint'), data={'id': 1, 'id_route': last[id].id, 'qual': 'ele', 'val': -12_000})
+        self.assertEqual(response.status_code, 200)
+        data = response.content.decode('utf8').replace("'", '"')
+        data = json.loads(data)
+        self.assertEqual(data, {'status':'error'})
 
 
 class UploadTests(TestCase):

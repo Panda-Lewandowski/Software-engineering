@@ -46,18 +46,24 @@
                 else {
                         var item_table =  $$("table").getSelectedItem();
                         webix.ajax().post("delpoint/", { id_route: item_table.id, id_point: item.id}, function(text){
-                            $$("points").remove($$("points").getSelectedId()); 
-                            webix.message("Points was deleted.");
-                            $$("lvl").clearAll();
-                            webix.ajax().post("getele/", { id: item_table.id}, function(text){
-                                var res = JSON.parse(text);
-                                var min_e = res.min;
-                                var max_e = res.max;
-                                var h = res.h;
-                                $$("lvl").define("data", res.eles);
-                                $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
-                                $$("lvl").refresh();
-                        });
+                            var res = JSON.parse(text);
+                            if (res.status == "ok") { 
+                                    $$("points").remove($$("points").getSelectedId()); 
+                                    webix.message("Points was deleted.");
+                                    $$("lvl").clearAll();
+                                    webix.ajax().post("getele/", { id: item_table.id}, function(text){
+                                        var res = JSON.parse(text);
+                                        var min_e = res.min;
+                                        var max_e = res.max;
+                                        var h = res.h;
+                                        $$("lvl").define("data", res.eles);
+                                        $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
+                                        $$("lvl").refresh();
+                                });
+                            }
+                            else {
+                                webix.alert("Error while deleting!");
+                            }
 
                         });
 
@@ -226,9 +232,16 @@
                     onAfterEditStop:function(state, editor, ignoreUpdate){
                         var item = this.getSelectedId();
                         webix.ajax().post("editroute/", { id: item.id, qual: item.column, val: state.value}, function(text){
-                            if(state.value != state.old){
+                            var res = JSON.parse(text); 
+                            if (res.status == 'ok') {
+                                if(state.value != state.old){
                                 webix.message("Cell value was changed")
+                                }
                             }
+                            else {
+                                webix.alert("Invalid value! Try again!");
+                            }
+
                             
                         });
                  
@@ -347,25 +360,32 @@
                         var route = $$("table").getSelectedId();
                         
                         webix.ajax().post("editpoint/", { id: item.id, id_route: route.id, qual: item.column, val: state.value}, function(text){
-                            if(state.value != state.old){
+                            var res = JSON.parse(text); 
+                            if (res.status == 'ok') {
+                                if(state.value != state.old){
                                 webix.message("Cell value was changed")
+                                }
+                                var ans = JSON.parse(text);
+                                if (item.column == 'ele') {
+                                    $$("lvl").clearAll();
+                                    var min_e = ans.min;
+                                    var max_e = ans.max;
+                                    var h = ans.h;
+                                    $$("lvl").define("data", ans.val);
+                                    $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
+                                    $$("lvl").refresh();
+                                }
+                                else if (item.column == 'lon' || ite.column == 'lat') {
+                                    var len_item = $$('table').getItem(route.id);
+                                    len_item['len'] = ans.val;
+                                    $$('table').refresh();
+                                    //alert(JSON.stringify(len_item));
+                                }
                             }
-                            var ans = JSON.parse(text);
-                            if (item.column == 'ele') {
-                                $$("lvl").clearAll();
-                                var min_e = ans.min;
-                                var max_e = ans.max;
-                                var h = ans.h;
-                                $$("lvl").define("data", ans.val);
-                                $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
-                                $$("lvl").refresh();
+                            else {
+                                webix.alert("Invalid value! Try again!");
                             }
-                            else if (item.column == 'lon' || ite.column == 'lat') {
-                                var len_item = $$('table').getItem(route.id);
-                                len_item['len'] = ans.val;
-                                $$('table').refresh();
-                                //alert(JSON.stringify(len_item));
-                            }
+                             
                         });
                         this.unselectAll();
                     }
