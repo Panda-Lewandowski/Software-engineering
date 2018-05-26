@@ -11,6 +11,8 @@ import reversion
 from reversion.models import Version
 from .models import Route, OperationStack 
 from routes import settings
+import waffle
+from waffle.decorators import waffle_switch
 
 R = 6371  # Polar radius
 
@@ -45,12 +47,19 @@ def add_poly(request):
         
         json_points = []
         for i in range(len(p)):
-            json_points.append({
-                'id':i+1,
-                'lat': p[i][0],
-                'lon': p[i][1],
-                'ele': 0
-            })
+            if waffle.switch_is_active('ele-switch'):
+                json_points.append({
+                    'id':i+1,
+                    'lat': p[i][0],
+                    'lon': p[i][1],
+                    'ele': 0
+                })
+            else:
+                json_points.append({
+                    'id':i+1,
+                    'lat': p[i][0],
+                    'lon': p[i][1],
+                })
 
         with reversion.create_revision(): 
             route = Route(title=request.POST['name'], date=datetime.now().date(), 
@@ -60,8 +69,6 @@ def add_poly(request):
 
             op = OperationStack(op='add_poly', pk_route=route.id, num_version=0)
             op.save()
-
-
 
         data = {'id':route.id, 'name':route.title, 'len':route.length, 'date':route.date}
     
@@ -73,6 +80,7 @@ def get_points(request):
         return JsonResponse({'points':route.points})
 
 
+@waffle_switch('ele-switch')
 def get_ele(request):
     if request.method == "POST":
         route = Route.objects.filter(id__exact=request.POST['id'])[0]
@@ -146,6 +154,7 @@ def edit_route(request):
             elif qual == 'date':
                 try:
                     route.date = datetime.strptime(new_value, "%Y-%m-%d").date()
+                    print(route.date)
                 except ValueError:
                     return JsonResponse({'status':'invalid'}) 
 
@@ -191,7 +200,8 @@ def edit_point(request):
                 val = round(length)
                 route.length = val
                 route.save()
-            elif qual == 'ele':
+            
+            if qual == 'ele' and waffle.switch_is_active('ele-switch'):
                 if new_value < -10_994 or new_value > 8848:
                     return JsonResponse({"status":"error"}) 
                 route.points[j]['ele'] = new_value
@@ -223,7 +233,7 @@ def edit_point(request):
             ver = Version.objects.get_for_object(route)
             op = OperationStack(op='edit_point', pk_route=route.id, num_version=len(ver)+1)
             op.save()
-        if qual == 'ele':       
+        if qual == 'ele'  and waffle.switch_is_active('ele-switch'):       
             return JsonResponse({'status':'ok', 'val': eles, 'min':min_ele, 'max':max_ele, 'h':h})
         else:
             return JsonResponse({'status':'ok', 'val': val}) 
@@ -248,20 +258,27 @@ def upload(request):
             for track in gpx.tracks:
                 for segment in track.segments:
                     for p in segment.points:
-                        json_points.append({
-                            'id':i+1,
-                            'lat': p.latitude,
-                            'lon': p.longitude,
-                            'ele': p.elevation
-                        })
+                        if waffle.switch_is_active('ele-switch'):
+                            json_points.append({
+                                'id':i+1,
+                                'lat': p.latitude,
+                                'lon': p.longitude,
+                                'ele': p.elevation
+                            })
+                        else:
+                            json_points.append({
+                                'id':i+1,
+                                'lat': p.latitude,
+                                'lon': p.longitude,
+                            })
                         
                         
                         i += 1
 
             with reversion.create_revision():     
-                route = Route(title=file.name.split(".")[:-1], date=datetime.now().date(), 
+                route = Route(title=file.name.split(".")[0], date=datetime.now().date(), 
                         length=gpx.length_2d(), points=json_points)
-            
+
                 route.save()
 
                 op = OperationStack(op='add_gpx', pk_route=route.id, num_version=0)
@@ -362,7 +379,6 @@ def redo(request):
             return JsonResponse({"status":"uknown operation"}) 
 
         except OperationStack.DoesNotExist:
-            print(OperationStack.objects.all())
             return JsonResponse({"status":"error"}) 
 
     return JsonResponse({"status":"nothing"})

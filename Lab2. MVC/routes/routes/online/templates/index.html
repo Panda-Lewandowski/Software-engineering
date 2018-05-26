@@ -3,6 +3,7 @@
 <head>
     <title>Routes</title>
     {% load static %}
+    {% load waffle_tags %}
     <script type="text/javascript" src="//cdn.webix.com/edge/webix.js"></script>
 	<link rel="stylesheet" type="text/css" href="//cdn.webix.com/edge/webix.css">
 </head>
@@ -26,7 +27,9 @@
                             var res = JSON.parse(text);
                             if (res.status == "ok") { 
                                 webix.message("Route was deleted.")
+                                {% switch "ele-switch" %}
                                 $$("lvl").clearAll();
+                                {% endswitch %}
                                 $$("points").clearAll();
                                 $$("table").remove($$("table").getSelectedId());
                             }
@@ -50,6 +53,7 @@
                             if (res.status == "ok") { 
                                     $$("points").remove($$("points").getSelectedId()); 
                                     webix.message("Points was deleted.");
+                                    {% switch "ele-switch" %}
                                     $$("lvl").clearAll();
                                     webix.ajax().post("getele/", { id: item_table.id}, function(text){
                                         var res = JSON.parse(text);
@@ -58,8 +62,8 @@
                                         var h = res.h;
                                         $$("lvl").define("data", res.eles);
                                         $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
-                                        $$("lvl").refresh();
-                                });
+                                        $$("lvl").refresh(); 
+                                });{% endswitch %}
                             }
                             else {
                                 webix.alert("Error while deleting!");
@@ -74,7 +78,9 @@
                 webix.ajax("deleteall/", function(text){
                         var ans = JSON.parse(text);
                         $$("table").clearAll();
+                        {% switch "ele-switch" %}
                         $$("lvl").clearAll();
+                        {% endswitch %}
                         $$("points").clearAll();
                         webix.message(ans.n + " routes were deleted.");
                     });
@@ -96,7 +102,9 @@
                         if (ans.act == "remove") {
                         $$("table").remove(ans.val);
                         $$("table").refresh();
+                        {% switch "ele-switch" %}
                         $$("lvl").clearAll();
+                        {% endswitch %}
                         $$("points").clearAll();
                         }
 
@@ -110,6 +118,7 @@
                             $$("points").define("data", ans.val.points);
                             $$("points").sort("id")
                             $$("points").refresh();
+                            {% switch "ele-switch" %}
                             $$("lvl").clearAll();
                             webix.ajax().post("getele/", { id: ans.val.id}, function(text){
                                 var res = JSON.parse(text);
@@ -120,12 +129,15 @@
                                 $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
                                 $$("lvl").refresh();
                         });
+                        {% endswitch %}
                         }
 
                         if (ans.act == "add") {
                             $$("table").add(ans.val);
                             $$("table").refresh();
+                            {% switch "ele-switch" %}
                             $$("lvl").clearAll();
+                            {% endswitch %}
                             $$("points").clearAll();
                         }
 
@@ -153,7 +165,9 @@
                         if (ans.act == "add") {
                         $$("table").add(ans.val);
                         $$("table").refresh();
+                        {% switch "ele-switch" %}
                         $$("lvl").clearAll();
+                        {% endswitch %}
                         $$("points").clearAll();
                         }
 
@@ -162,6 +176,7 @@
                             $$("points").define("data", ans.val.points);
                             $$("points").sort("id")
                             $$("points").refresh();
+                            {% switch "ele-switch" %}
                             $$("lvl").clearAll();
                             webix.ajax().post("getele/", { id: ans.val.id}, function(text){
                                 var res = JSON.parse(text);
@@ -172,6 +187,7 @@
                                 $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
                                 $$("lvl").refresh();
                         });
+                        {% endswitch %}
                         }
 
                         if (ans.act == "edit_route") {
@@ -182,7 +198,9 @@
                         if (ans.act == "remove") {
                         $$("table").remove(ans.val);
                         $$("table").refresh();
+                        {% switch "ele-switch" %}
                         $$("lvl").clearAll();
+                        {% endswitch %}
                         $$("points").clearAll();
                         }
                     }
@@ -219,6 +237,7 @@
                                     $$("points").add(points[i]);
                                 }
                         });
+                        {% switch "ele-switch" %}
                         webix.ajax().post("getele/", { id: item.id}, function(text){
                                 var res = JSON.parse(text);
                                 var min_e = res.min;
@@ -228,6 +247,7 @@
                                 $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
                                 $$("lvl").refresh();
                         });
+                        {% endswitch %}
                     },
                     onAfterEditStop:function(state, editor, ignoreUpdate){
                         var item = this.getSelectedId();
@@ -303,7 +323,7 @@
                                 return false;
                             },
                             onFileUpload:function(response){
-                                $$("table").add({ id:response.id, name:response.name[0], len:response.len, date:response.date});
+                                $$("table").add({ id:response.id, name:response.name, len:response.len, date:response.date});
                                 $$("table").hideOverlay();
                                 $$('table').refresh();
                                 webix.message("Your post from " + response.name + " was added.");
@@ -321,6 +341,7 @@
         }
     ]}, 
       { cols:[
+        {% switch "ele-switch" %}
           {
             id:'lvl',
             width: 900,
@@ -340,7 +361,8 @@
             tooltip:{
                 template: "#ele#"
             },
-          }, 
+          },
+        {% endswitch %}
           { 
             id:"points",
             view:"datatable", 
@@ -352,7 +374,9 @@
     				{id:"id", header:"", width:50, sort:"int"},
                   	{id:"lon", header:"Longitude",  editor:"text", fillspace:true},
                     {id:"lat", header:"Latitute",  editor:"text", fillspace:true}, 
+                    {% switch "ele-switch" %}
                     {id:"ele", header:"Sea Level", editor:"text", fillspace:true}, 
+                    {% endswitch %}
                   ],
             on: {
                 onAfterEditStop:function(state, editor, ignoreUpdate){
@@ -366,6 +390,7 @@
                                 webix.message("Cell value was changed")
                                 }
                                 var ans = JSON.parse(text);
+                                {% switch "ele-switch" %}
                                 if (item.column == 'ele') {
                                     $$("lvl").clearAll();
                                     var min_e = ans.min;
@@ -375,7 +400,7 @@
                                     $$("lvl").define("yAxis", {start:min_e, end:max_e, step:h});
                                     $$("lvl").refresh();
                                 }
-                                else if (item.column == 'lon' || ite.column == 'lat') {
+                                else {% endswitch %} if (item.column == 'lon' || ite.column == 'lat') {
                                     var len_item = $$('table').getItem(route.id);
                                     len_item['len'] = ans.val;
                                     $$('table').refresh();

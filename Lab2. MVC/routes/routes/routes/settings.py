@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'online.apps.OnlineConfig',
-    'reversion'
+    'reversion', 'waffle',
 ]
 
 MIDDLEWARE = [
@@ -126,3 +126,12 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 INDEX = 0
+
+
+# GARGOYLE_SWITCH_DEFAULTS = { 
+#     'ele_switch': {
+#       'is_active': False,
+#       'label': 'Elevation Switch',
+#       'description': 'Swith on if elevation feature is needed',
+#     },
+# }
