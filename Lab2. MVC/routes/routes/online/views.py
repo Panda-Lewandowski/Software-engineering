@@ -154,7 +154,6 @@ def edit_route(request):
             elif qual == 'date':
                 try:
                     route.date = datetime.strptime(new_value, "%Y-%m-%d").date()
-                    print(route.date)
                 except ValueError:
                     return JsonResponse({'status':'invalid'}) 
 

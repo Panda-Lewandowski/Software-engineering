@@ -4,6 +4,8 @@ from django.core.urlresolvers import reverse
 import json
 from datetime import datetime
 from .models import Route
+from waffle.testutils import override_switch
+import waffle
 
 
 class ConvertToPolylineTests(TestCase):
@@ -39,20 +41,24 @@ class AddPolyTests(TestCase):
         except Route.DoesNotExist:
             self.fail("Test route does not exist")
 
+    @override_switch('ele-switch', active=True)
     def test_points(self):
+        assert waffle.switch_is_active('ele-switch')
         try:
             response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
             self.assertEqual(response.status_code, 200)
             route = Route.objects.get(title='test')
             self.assertEqual(route.points, [{'id': 1, 'ele': 0, 'lat': 38.5, 'lon': -120.2}, 
-                                            {'id': 2, 'ele': 0, 'lat': 40.7, 'lon': -120.95}, 
-                                            {'id': 3, 'ele': 0, 'lat': 43.252, 'lon': -126.453}])
+                                                {'id': 2, 'ele': 0, 'lat': 40.7, 'lon': -120.95}, 
+                                                {'id': 3, 'ele': 0, 'lat': 43.252, 'lon': -126.453}])
         except Route.DoesNotExist:
             self.fail("Test route does not exist")         
 
 
 class GetPointsTests(TestCase):
+    @override_switch('ele-switch', active=True)
     def test_get_points(self):   
+        assert waffle.switch_is_active('ele-switch')
         response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
         self.assertEqual(response.status_code, 200)
         last = Route.objects.all()
@@ -67,7 +73,9 @@ class GetPointsTests(TestCase):
 
 
 class GetEleTests(TestCase):
+    @override_switch('ele-switch', active=True)
     def test_get_ele_empty(self):
+        assert waffle.switch_is_active('ele-switch')
         response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
         self.assertEqual(response.status_code, 200)
         last = Route.objects.all()
@@ -81,7 +89,9 @@ class GetEleTests(TestCase):
                                          {'id': 1, 'ele': 0, 'x': 4791.58}, 
                                          {'id': 2, 'ele': 0, 'x': 6389.96}]})
 
+    @override_switch('ele-switch', active=True)
     def test_get_ele_not_empty(self):
+        assert waffle.switch_is_active('ele-switch')
         pass
 
 
@@ -111,7 +121,9 @@ class DelRouteTest(TestCase):
 
 
 class DelPointTest(TestCase):
+    @override_switch('ele-switch', active=True)
     def test_exist_point(self):
+        assert waffle.switch_is_active('ele-switch')
         response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
         self.assertEqual(response.status_code, 200)
         last = Route.objects.all()
@@ -125,7 +137,9 @@ class DelPointTest(TestCase):
         self.assertEqual(route.points, [{'id': 2, 'ele': 0, 'lat': 40.7, 'lon': -120.95}, 
                                             {'id': 3, 'ele': 0, 'lat': 43.252, 'lon': -126.453}])
 
+    @override_switch('ele-switch', active=True)
     def test_not_exist_point(self):
+        assert waffle.switch_is_active('ele-switch')
         response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
         self.assertEqual(response.status_code, 200)
         last = Route.objects.all()
@@ -210,7 +224,9 @@ class EditPointTest(TestCase):
         self.assertEqual(route.points[0]['lon'], 32)
         self.assertEqual(route.length, 12410)
 
+    @override_switch('ele-switch', active=True)
     def test_valid_ele(self):
+        assert waffle.switch_is_active('ele-switch')
         response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
         self.assertEqual(response.status_code, 200)
         last = Route.objects.all()
@@ -240,7 +256,9 @@ class EditPointTest(TestCase):
         self.assertEqual(route.points[0]['lon'], -120.2)
         self.assertEqual(route.length, 9757)
 
+    @override_switch('ele-switch', active=True)
     def test_not_valid_char_ele(self):
+        assert waffle.switch_is_active('ele-switch')
         response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
         self.assertEqual(response.status_code, 200)
         last = Route.objects.all()
@@ -297,7 +315,9 @@ class EditPointTest(TestCase):
         data = json.loads(data)
         self.assertEqual(data, {'status':'error'})
 
+    @override_switch('ele-switch', active=True)
     def test_not_valid_ele_max(self):
+        assert waffle.switch_is_active('ele-switch')
         response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
         self.assertEqual(response.status_code, 200)
         last = Route.objects.all()
@@ -308,7 +328,9 @@ class EditPointTest(TestCase):
         data = json.loads(data)
         self.assertEqual(data, {'status':'error'})
 
+    @override_switch('ele-switch', active=True)
     def test_not_valid_ele_min(self):
+        assert waffle.switch_is_active('ele-switch')
         response = self.client.post(reverse('addpoly'), data={'poly':'_p~iF~ps|U_ulLnnqC_mqNvxq`@', 'name':'test'})
         self.assertEqual(response.status_code, 200)
         last = Route.objects.all()
