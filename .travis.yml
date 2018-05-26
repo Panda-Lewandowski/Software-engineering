@@ -5,9 +5,13 @@
     - postgresql
   addons:
     postgresql: "10.4"
-# command to install dependencies
+  env:
+    global:
+      - PGPORT=5432
   install:
     - pip install -r requirements.txt
+  before_script:
+    - psql -c 'create database postgres;' -U postgres
   script:
     - python Lab2.\ MVC/routes/routes/manage.py makemigrations
     - python Lab2.\ MVC/routes/routes/manage.py migrate
