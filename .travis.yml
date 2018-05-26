@@ -5,6 +5,6 @@
   install:
     - pip install -r requirements.txt
   script:
-    - python manage.py makemigrations
-    - python3 manage.py migrate
+    - python Lab2.\ MVC/routes/routes/manage.py makemigrations
+    - python3 Lab2.\ MVC/routes/routes/manage.py migrate
     - python Lab2.\ MVC/routes/routes/manage.py test online
