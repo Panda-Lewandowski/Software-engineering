@@ -11,6 +11,15 @@
   install:
     - pip install -r requirements.txt
   before_script:
+    - sudo /etc/init.d/postgresql stop
+    - sudo apt-get -y remove --purge postgresql-9.1
+    - sudo apt-get -y remove --purge postgresql-9.2
+    - sudo apt-get -y remove --purge postgresql-9.3
+    - sudo apt-get -y remove --purge postgresql-9.4
+    - sudo apt-get -y autoremove
+    - sudo apt-get update
+    - sudo apt-get -y install postgresql-10.4
+    - sudo service postgresql restart 10.4
     - psql -c 'create database postgres;' -U postgres
   script:
     - python Lab2.\ MVC/routes/routes/manage.py makemigrations
