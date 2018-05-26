@@ -7,14 +7,11 @@
     2018
    
 
-| List of Labs  |     Stage     |     Deadline     |
-| ------------- |:-------------:|:-------------:|
-| Lab 1|🌀|15.03.18|
-| Lab 2||22.03.18|
-| Lab 3||12.04.18|
-| Lab 4||26.04.18|
-| Lab 5||17.05.18|
-| Lab 6||31.05.18|
+| List of Labs  |     Stage     |
+| ------------- |:-------------:|
+| Lab 1|🌀|
+| Lab 2|![Travis](https://img.shields.io/travis/USER/REPO.svg?style=plastic)|
+
 
 > You can find tasks in lab's folders.
 
