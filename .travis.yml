@@ -5,4 +5,4 @@
   install:
     - pip install -r requirements.txt
   script:
-    - python /Lab2.\ MVC/manage.py test online
+    - python /Lab2.\ MVC/routes/routes/manage.py test online
