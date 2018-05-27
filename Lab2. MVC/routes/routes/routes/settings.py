@@ -57,13 +57,18 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
-        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+            ],
+             'loaders': [
+                ('django.template.loaders.cached.Loader', [
+                    'django.template.loaders.filesystem.Loader',
+                    'django.template.loaders.app_directories.Loader',
+            ]),
             ],
         },
     },
@@ -128,10 +133,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 INDEX = 0
 
 
-# GARGOYLE_SWITCH_DEFAULTS = { 
-#     'ele_switch': {
-#       'is_active': False,
-#       'label': 'Elevation Switch',
-#       'description': 'Swith on if elevation feature is needed',
-#     },
-# }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'cache_table',
+        'TIMEOUT': 30
+    }
+}

@@ -13,10 +13,11 @@ from .models import Route, OperationStack
 from routes import settings
 import waffle
 from waffle.decorators import waffle_switch
+from django.views.decorators.cache import cache_page
 
 R = 6371  # Polar radius
 
-
+@cache_page(30)
 def index(request):
     routes = Route.objects.all()
     data = '['
